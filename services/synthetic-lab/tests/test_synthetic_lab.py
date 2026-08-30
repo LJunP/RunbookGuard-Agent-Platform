@@ -334,3 +334,108 @@ class TestScenarioCatalogue:
 
     def test_health_endpoint(self, client: TestClient) -> None:
         assert client.get("/health").status_code == 200
+
+
+class TestFrozenObservationWindow:
+    """t0 参数让观测窗口成为可冻结的配置。
+
+    起因（M6 第 3 轮冻结评测）：T0 对齐到整分钟保证了「同一分钟内连续启动
+    产出相同数据」，但绝对分钟随启动时刻变化。指标载荷带绝对时间戳，
+    evidence_id 是载荷的内容摘要，因此跨过一分钟边界的两次运行会得到
+    不同的 evidence_id —— 行为相同而 Trace 摘要不同。
+
+    第 1、2 轮各跑 17 秒恰好落在同一分钟，Replay 报「一致」。
+    那个「一致」是运气而不是系统确定性，因此比失败更危险。
+    """
+
+    def test_same_t0_yields_byte_identical_metrics(self, client) -> None:
+        frozen = "2026-08-30T02:00:00Z"
+        seen = []
+        for _ in range(3):
+            client.post("/v1/scenarios/stop")
+            started = client.post(
+                f"/v1/scenarios/db-pool-exhaustion-v1/start?t0={frozen}"
+            )
+            assert started.status_code == 200
+            # 返回的是规范化后的 isoformat（+00:00），不是原样回显。
+            assert started.json()["t0"] == "2026-08-30T02:00:00+00:00"
+            body = client.get(
+                "/v1/metrics?service=synthetic-orders&metric=db_pool_active"
+            ).json()
+            seen.append(json.dumps(body, sort_keys=True))
+        assert len(set(seen)) == 1, "同一 t0 的三次启动产出不同数据"
+
+    def test_different_t0_yields_different_timestamps(self, client) -> None:
+        """反面：t0 不同就该不同。否则这个参数没有起作用，
+        而「三次一致」会退化成「永远一致」这种无意义的通过。"""
+        payloads = []
+        for minute in ("02:00:00", "02:05:00"):
+            client.post("/v1/scenarios/stop")
+            client.post(
+                f"/v1/scenarios/db-pool-exhaustion-v1/start?t0=2026-08-30T{minute}Z"
+            )
+            payloads.append(
+                client.get(
+                    "/v1/metrics?service=synthetic-orders&metric=db_pool_active"
+                ).json()["points"][0]["timestamp"]
+            )
+        assert payloads[0] != payloads[1]
+
+    def test_logs_are_also_stable_under_frozen_t0(self, client) -> None:
+        """日志比指标更容易漂：行内秒偏移由 seed 决定，窗口切在分钟中间时会丢行。"""
+        frozen = "2026-08-30T02:00:00Z"
+        seen = []
+        for _ in range(2):
+            client.post("/v1/scenarios/stop")
+            client.post(f"/v1/scenarios/db-pool-exhaustion-v1/start?t0={frozen}")
+            body = client.get(
+                "/v1/logs?service=synthetic-orders&query=connection%20pool"
+            ).json()
+            seen.append(json.dumps(body, sort_keys=True))
+        assert len(set(seen)) == 1
+
+    def test_naive_t0_is_rejected(self, client) -> None:
+        """不带时区的时间戳是歧义的：它在两台不同时区的机器上表示不同瞬间。"""
+        client.post("/v1/scenarios/stop")
+        response = client.post(
+            "/v1/scenarios/db-pool-exhaustion-v1/start?t0=2026-08-30T02:00:00"
+        )
+        assert response.status_code == 422
+        assert response.json()["error"] == "invalid_t0"
+
+    def test_unaligned_t0_is_rejected_not_silently_truncated(self, client) -> None:
+        """给了带秒的 t0 说明调用方以为秒有意义。悄悄抹掉会让它拿到
+        与预期不同的窗口而不知道。"""
+        client.post("/v1/scenarios/stop")
+        response = client.post(
+            "/v1/scenarios/db-pool-exhaustion-v1/start?t0=2026-08-30T02:00:37Z"
+        )
+        assert response.status_code == 422
+        assert "whole minute" in response.json()["message"]
+
+    def test_malformed_t0_is_rejected(self, client) -> None:
+        client.post("/v1/scenarios/stop")
+        response = client.post(
+            "/v1/scenarios/db-pool-exhaustion-v1/start?t0=not-a-timestamp"
+        )
+        assert response.status_code == 422
+
+    def test_omitting_t0_still_works(self, client) -> None:
+        """向后兼容：不给 t0 时用当前整分钟，与原行为一致。"""
+        client.post("/v1/scenarios/stop")
+        response = client.post("/v1/scenarios/db-pool-exhaustion-v1/start")
+        assert response.status_code == 200
+        t0 = response.json()["t0"]
+        assert t0.endswith("+00:00")
+        # 对齐到整分钟。
+        assert ":00+00:00" in t0
+
+    def test_unencoded_plus_gets_an_actionable_error(self, client) -> None:
+        """查询串里的 `+` 按 HTTP 规范解码成空格。这是最容易踩的坑，
+        错误消息必须指出来——只说「格式不对」会让人去查日期格式，方向就错了。"""
+        client.post("/v1/scenarios/stop")
+        response = client.post(
+            "/v1/scenarios/db-pool-exhaustion-v1/start?t0=2026-08-30T02:00:00+00:00"
+        )
+        assert response.status_code == 422
+        assert "%2B" in response.json()["message"]

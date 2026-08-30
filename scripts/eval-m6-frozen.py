@@ -56,20 +56,55 @@ REPORTS = REPO / "eval" / "reports"
 TRACES = REPO / "eval" / "traces"
 
 
-async def _prepare_scenario(client: httpx.AsyncClient, case) -> None:
+def frozen_t0() -> str:
+    """冻结的观测窗口起点，对齐到整分钟。
+
+    为什么必须冻结：synthetic-lab 的 T0 对齐到整分钟，但**绝对**分钟随启动时刻
+    变化。指标载荷带绝对时间戳，而 evidence_id 是载荷的内容摘要，
+    因此跨过一分钟边界的两次运行会得到不同的 evidence_id ——
+    行为完全相同而 Trace 摘要不同。
+
+    第 3 轮冻结评测就是这样暴露的：第 1、2 轮各跑 17 秒恰好落在同一分钟，
+    Replay 报「一致」；第 3 轮跨过 03:08:00，37 个 case 的证据 id 全变。
+    **前两轮的「一致」是运气，不是系统确定性。**
+
+    修法是把观测窗口变成冻结配置的一项，而不是把时间戳从摘要里排除掉——
+    后者会让「证据内容真的变了」也被当成一致。
+
+    用 Z 后缀而不是 +00:00：查询串里的 `+` 按 HTTP 规范解码成空格。
+    """
+    return datetime.now(UTC).replace(second=0, microsecond=0).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+
+
+async def _prepare_scenario(client: httpx.AsyncClient, case, t0: str) -> None:
     await client.post(f"{LAB}/v1/scenarios/stop")
     await client.post(f"{LAB}/v1/actions/reset")
     if case.scenario_id:
-        await client.post(f"{LAB}/v1/scenarios/{case.scenario_id}/start")
+        response = await client.post(
+            f"{LAB}/v1/scenarios/{case.scenario_id}/start", params={"t0": t0}
+        )
+        if response.status_code != 200:
+            # 冻结窗口没设上就中止：继续跑会得到一个可复现性未知的结果，
+            # 而那个结果看起来与正常的一样。
+            raise RuntimeError(
+                f"could not start {case.scenario_id} with frozen t0={t0}: "
+                f"HTTP {response.status_code} {response.text[:200]}"
+            )
 
 
 async def _run_suite(
-    harness: EvaluationHarness, client: httpx.AsyncClient, cases: list, label: str
+    harness: EvaluationHarness,
+    client: httpx.AsyncClient,
+    cases: list,
+    label: str,
+    t0: str,
 ) -> SuiteReport:
     print(f"\n== {label} ({len(cases)} cases) ==")
     verdicts = []
     for case in cases:
-        await _prepare_scenario(client, case)
+        await _prepare_scenario(client, case, t0)
         verdict = await harness.run_case(case)
         verdicts.append(verdict)
         expected_fail = case.expects_failure
@@ -175,12 +210,16 @@ async def main() -> int:
             return 1
         print(f"incidents-held: {len(held_cases)} cases, digest {held_digest[:16]}")
 
+    t0 = frozen_t0()
+    print(f"frozen observation window t0: {t0}")
+
     manifest = build_manifest(
         dataset="incidents-dev + incidents-held",
         model_id="scripted-diagnosis + fake-model",
         provider_id="scripted/fake (deterministic)",
         retriever=retriever,
         held_digest=held_digest,
+        observation_window_t0=t0,
     )
     print(f"\nfreeze fingerprint: {manifest.fingerprint()[:16]}")
     print(f"candidate commit:   {manifest.candidate_commit[:12]}")
@@ -204,14 +243,18 @@ async def main() -> int:
             config_fingerprint=manifest.fingerprint(),
         )
 
-        dev_report = await _run_suite(harness, client, DEV_CASES, "incidents-dev")
+        dev_report = await _run_suite(harness, client, DEV_CASES, "incidents-dev", t0)
         dev_traces = dict(harness.traces)
 
-        probe_report = await _run_suite(harness, client, PROBE_CASES, "grader probes")
+        probe_report = await _run_suite(
+            harness, client, PROBE_CASES, "grader probes", t0
+        )
 
         held_report: SuiteReport | None = None
         if held_cases:
-            held_report = await _run_suite(harness, client, held_cases, "incidents-held")
+            held_report = await _run_suite(
+                harness, client, held_cases, "incidents-held", t0
+            )
 
         # Replay：dev 全套再跑一遍，比对 trace。
         # 同一配置的两次运行行为不同，则「跑一次」的结论不成立。
@@ -223,7 +266,9 @@ async def main() -> int:
             config_fingerprint=manifest.fingerprint(),
         )
         for case in DEV_CASES:
-            await _prepare_scenario(client, case)
+            # 同一个 t0：Replay 要验证的是「同一配置的两次运行行为是否相同」，
+            # 而观测窗口是配置的一部分。传不同的 t0 等于换了输入再问行为为什么不同。
+            await _prepare_scenario(client, case, t0)
             await replay_harness.run_case(case)
         await client.post(f"{LAB}/v1/scenarios/stop")
 

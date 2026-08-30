@@ -1,0 +1,89 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-cost-budget",
+  "case_id": "dev-cost-budget",
+  "config_fingerprint": "84c0d0879843bbc10d3ef28201eb04e59811ef10d93936de4c6a482b274cdee6",
+  "recorded_at": "2026-08-30T03:07:58.650011+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "cost_budget_exhausted",
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "FAILED",
+      "detail": "cost 420/1 micros",
+      "tool_name": null,
+      "failure_code": "cost_budget_exhausted"
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-427898095e20",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "427898095e20e13fde558ab268ec8aefdda521561cb8aa9305178c9545f83785",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": null,
+  "digest": "d4a6b164d665886a6bfc26c7f6093cb42f543ed283841bd967e0ed75f1ad42cb"
+}

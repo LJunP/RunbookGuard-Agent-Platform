@@ -334,3 +334,62 @@ class TestApprovalScriptBehaviour:
             )
         assert "approval_digest_mismatch" in verdict.deny_reasons
         assert verdict.actions_executed == 0
+
+
+class TestFreezeManifestCompleteness:
+    """冻结清单必须记下所有影响可复现性的东西。
+
+    M6 第 3 轮暴露了一个漏项：观测窗口（synthetic-lab 的 T0）没被冻结，
+    因此跨分钟边界的两次运行得到不同的 evidence_id —— 行为相同而 Trace 摘要不同。
+    前两轮的 Replay「一致」是运气而不是系统确定性。
+
+    这一组测试的作用是让「又漏了一项」在改代码时就被发现，而不是在
+    下一次跨了分钟边界的评测里。
+    """
+
+    def _manifest(self, **kwargs):
+        from agent_runtime.evaluation.freeze import build_manifest
+
+        defaults = dict(
+            dataset="incidents-dev",
+            model_id="scripted",
+            provider_id="scripted",
+            retriever="lexical baseline (BM25)",
+        )
+        defaults.update(kwargs)
+        return build_manifest(**defaults)
+
+    def test_observation_window_is_recorded(self) -> None:
+        manifest = self._manifest(observation_window_t0="2026-08-30T02:00:00Z")
+        assert manifest.dataset["observation_window_t0"] == "2026-08-30T02:00:00Z"
+
+    def test_missing_observation_window_is_marked_not_frozen(self) -> None:
+        """不给时标 NOT_FROZEN 而不是留空：空值会被读成「这一项无关」，
+        而它的真实含义是「这次评测的可复现性未知」。"""
+        assert self._manifest().dataset["observation_window_t0"] == "NOT_FROZEN"
+
+    def test_observation_window_changes_the_fingerprint(self) -> None:
+        """窗口不同就是不同的配置。指纹必须反映这一点，否则两次
+        窗口不同的评测会被当成「同一配置」而互相比较。"""
+        a = self._manifest(observation_window_t0="2026-08-30T02:00:00Z")
+        b = self._manifest(observation_window_t0="2026-08-30T03:00:00Z")
+        assert a.fingerprint() != b.fingerprint()
+
+    def test_manifest_covers_the_seven_required_items(self) -> None:
+        """说明书 §11 的七项。"""
+        payload = self._manifest(observation_window_t0="2026-08-30T02:00:00Z").as_dict()
+        assert payload["candidate_commit"]
+        assert payload["dataset"]["runbooks_digest"]
+        assert payload["prompt"]["diagnosis_prompt_digest"]
+        assert payload["model"]["model_id"]
+        assert payload["tools"]
+        assert payload["evaluator"]["evaluator_digest"]
+        assert payload["thresholds"]
+
+    def test_prompt_digest_reflects_prompt_changes(self) -> None:
+        """prompt 指纹取的是固定输入上的**输出**而不是源码摘要：
+        改注释不该算 prompt 变更，改依赖的常量必须算。"""
+        from agent_runtime.evaluation.freeze import prompt_fingerprint
+
+        assert len(prompt_fingerprint()) == 64
+        assert prompt_fingerprint() == prompt_fingerprint()

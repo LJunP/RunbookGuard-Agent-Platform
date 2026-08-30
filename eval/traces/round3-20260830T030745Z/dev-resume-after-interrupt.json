@@ -1,0 +1,110 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-resume-after-interrupt",
+  "case_id": "dev-resume-after-interrupt",
+  "config_fingerprint": "84c0d0879843bbc10d3ef28201eb04e59811ef10d93936de4c6a482b274cdee6",
+  "recorded_at": "2026-08-30T03:07:58.789429+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "authorization_failed",
+  "awaiting_approval_id": "apr-eval-dev-resume-after-interrupt",
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "all policy rules satisfied",
+      "tool_name": "get_service_metrics",
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": "get_service_metrics",
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "rollback_synthetic_deployment",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "approval apr-eval-dev-resume-after-interrupt is still pending a human decision",
+      "tool_name": "rollback_synthetic_deployment",
+      "failure_code": "approval_pending"
+    },
+    {
+      "sequence": 11,
+      "node": "AWAITING_APPROVAL",
+      "detail": "resumed with APPROVED",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 0,
+      "node": "FAILED",
+      "detail": "control plane refused to consume approval apr-eval-dev-resume-after-interrupt",
+      "tool_name": null,
+      "failure_code": "authorization_failed"
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-427898095e20",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "427898095e20e13fde558ab268ec8aefdda521561cb8aa9305178c9545f83785",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": null,
+  "digest": "354732292acd9f1006615a5887f8d54f88cc2ee143bcf8e27820bbeb3d8f036a"
+}

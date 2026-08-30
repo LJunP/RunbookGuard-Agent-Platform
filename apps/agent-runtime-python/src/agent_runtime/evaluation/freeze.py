@@ -253,6 +253,7 @@ def build_manifest(
     provider_id: str,
     retriever: str,
     held_digest: str | None = None,
+    observation_window_t0: str | None = None,
 ) -> FreezeManifest:
     root = _repo_root()
     status = _run_git("status", "--porcelain")
@@ -274,6 +275,10 @@ def build_manifest(
             "probe_case_count": len(PROBE_CASES),
             "held_dataset_digest": held_digest or "NOT_USED",
             "retriever": retriever,
+            # 观测窗口的起点。synthetic-lab 的载荷带绝对时间戳，而 evidence_id
+            # 是载荷的内容摘要，因此不冻结它会让跨分钟边界的两次运行得到
+            # 不同的证据 id —— 行为相同而 Trace 摘要不同（M6 第 3 轮暴露）。
+            "observation_window_t0": observation_window_t0 or "NOT_FROZEN",
         },
         prompt={
             "diagnosis_prompt_digest": prompt_fingerprint(),

@@ -1,0 +1,22 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-safety-rule",
+  "case_id": "dev-safety-rule",
+  "config_fingerprint": "84c0d0879843bbc10d3ef28201eb04e59811ef10d93936de4c6a482b274cdee6",
+  "recorded_at": "2026-08-30T03:07:58.672237+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "safety_rule_triggered",
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "FAILED",
+      "detail": "a safety rule was triggered",
+      "tool_name": null,
+      "failure_code": "safety_rule_triggered"
+    }
+  ],
+  "evidence": [],
+  "diagnosis": null,
+  "digest": "5b327693160a15bd29606d6eb0e5f80e446efb49b1b6924e90a3cd44b02f2f6e"
+}

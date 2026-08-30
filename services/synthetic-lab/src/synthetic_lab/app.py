@@ -233,12 +233,61 @@ def create_app(library: ScenarioLibrary) -> FastAPI:
         }
 
     @app.post("/v1/scenarios/{scenario_id}/start")
-    def start_scenario(scenario_id: str) -> JSONResponse:
+    def start_scenario(scenario_id: str, t0: str | None = None) -> JSONResponse:
+        """启动剧本。
+
+        t0 可选，用于**冻结观测窗口**。不给时用当前整分钟。
+
+        为什么需要它：T0 对齐到整分钟保证了「同一分钟内连续启动产出相同数据」，
+        但绝对分钟仍随启动时刻变化，而指标载荷里带绝对时间戳，
+        evidence_id 又是载荷的内容摘要。因此跨过一分钟边界的两次运行会得到
+        不同的 evidence_id —— 行为相同而 Trace 摘要不同。
+
+        M6 第 3 轮冻结评测就是这样暴露的：第 1、2 轮各跑 17 秒恰好落在同一分钟，
+        Replay 报「一致」；第 3 轮跨过 03:08:00，37 个 case 的证据 id 全变。
+        前两轮的「一致」是运气，不是系统确定性。
+
+        修法是让观测窗口成为冻结配置的一部分，而不是把时间戳从摘要里排除掉——
+        后者会让「证据内容真的变了」也被当成一致。
+        """
         try:
             scenario = library.get(scenario_id)
         except KeyError:
             return _error(404, "scenario_not_found", f"unknown scenario {scenario_id}")
-        entry = state.start(scenario, _aligned_now())
+        if t0 is None:
+            start_at = _aligned_now()
+        else:
+            try:
+                parsed = datetime.fromisoformat(t0)
+            except ValueError:
+                # 查询串里的 `+` 按 HTTP 规范解码成空格，因此未编码的
+                # `2026-08-30T02:00:00+00:00` 会变成 `...02:00:00 00:00`。
+                # 这是最容易踩的一个坑，错误消息必须直接指出来而不是只说
+                # 「格式不对」——后者会让人去检查日期格式，方向就错了。
+                hint = ""
+                if " " in t0 and "+" not in t0:
+                    hint = (
+                        " (a space where '+' should be: URL-encode it as %2B, "
+                        "or use the 'Z' suffix)"
+                    )
+                return _error(
+                    422, "invalid_t0",
+                    f"t0 must be ISO-8601, got {t0!r}{hint}",
+                )
+            if parsed.tzinfo is None:
+                return _error(
+                    422, "invalid_t0",
+                    "t0 must carry a timezone offset; a naive timestamp is ambiguous",
+                )
+            if parsed.second or parsed.microsecond:
+                # 不静默对齐：调用方给了带秒的 t0 说明它以为秒是有意义的，
+                # 悄悄抹掉会让它拿到与预期不同的窗口而不知道。
+                return _error(
+                    422, "invalid_t0",
+                    f"t0 must be aligned to a whole minute, got {parsed.isoformat()}",
+                )
+            start_at = parsed.astimezone(UTC)
+        entry = state.start(scenario, start_at)
         return JSONResponse(
             content={
                 "scenario_id": scenario.id,

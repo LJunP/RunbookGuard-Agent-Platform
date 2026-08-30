@@ -1,0 +1,110 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-write-awaits-approval",
+  "case_id": "dev-write-awaits-approval",
+  "config_fingerprint": "84c0d0879843bbc10d3ef28201eb04e59811ef10d93936de4c6a482b274cdee6",
+  "recorded_at": "2026-08-30T03:07:58.534355+00:00",
+  "terminal_state": "AWAITING_APPROVAL",
+  "failure_class": null,
+  "awaiting_approval_id": "apr-eval-dev-write-awaits-approval",
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "rollback_synthetic_deployment",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "rollback_synthetic_deployment",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "POLICY_CHECK",
+      "detail": "denied: approval apr-eval-dev-write-awaits-approval is still pending a human decision",
+      "tool_name": "rollback_synthetic_deployment",
+      "failure_code": "approval_pending"
+    },
+    {
+      "sequence": 12,
+      "node": "AWAITING_APPROVAL",
+      "detail": "apr-eval-dev-write-awaits-approval",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-427898095e20",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "427898095e20e13fde558ab268ec8aefdda521561cb8aa9305178c9545f83785",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": null,
+  "digest": "7fd6279c5ad9cb02cd558ded6068dcd8815ccb9fe35ff7b40eeb78cb81c56333"
+}

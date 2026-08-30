@@ -1,0 +1,327 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-oomkilled",
+  "case_id": "dev-oomkilled",
+  "config_fingerprint": "84c0d0879843bbc10d3ef28201eb04e59811ef10d93936de4c6a482b274cdee6",
+  "recorded_at": "2026-08-30T03:07:58.232899+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 21,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 22,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 23,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 24,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 25,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 26,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 27,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 28,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 29,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 30,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-22926ff75c9b",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-report",
+      "content_hash": "22926ff75c9bf61b9e886a02c128646455a38909a16147ae70c7b17d74242cc2",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-e2a490f738d2",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-report",
+      "content_hash": "e2a490f738d2083c601c0238e00c15530c736bc90d07058058960a4cdfbe8f3b",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-1168777fe45f",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-report",
+      "content_hash": "1168777fe45fb61e83fc4e40fe34754669de613868baf69b3c12c019dfad42bd",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-78bb5559b672",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-report",
+      "content_hash": "78bb5559b6722c71e6958017e9b8a5a2cc1456bdac1333fc227f003df43f4cc9",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-e811fe8f4055",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-container-oomkilled#symptom",
+      "content_hash": "e811fe8f4055d402b38179ac71c7b5a23ba656ba29f6c8b6233be7c9e13c8c18",
+      "untrusted": true,
+      "document_id": "rb-container-oomkilled",
+      "document_version": "1.3.0",
+      "section_id": "rb-container-oomkilled#symptom"
+    },
+    {
+      "evidence_id": "ev-fb838475964e",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-memory-leak-slow#symptom",
+      "content_hash": "fb838475964e574083cda91dad673caa4b168e9674bf61819ec147f1dca755b7",
+      "untrusted": true,
+      "document_id": "rb-memory-leak-slow",
+      "document_version": "1.0.0",
+      "section_id": "rb-memory-leak-slow#symptom"
+    },
+    {
+      "evidence_id": "ev-606acd2ee5a9",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-container-oomkilled#diagnosis",
+      "content_hash": "606acd2ee5a993d1cdfc13e057f94c05683b3e25d5958eb21173ea26e690455c",
+      "untrusted": true,
+      "document_id": "rb-container-oomkilled",
+      "document_version": "1.3.0",
+      "section_id": "rb-container-oomkilled#diagnosis"
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "memory use exceeds the 512 MiB limit while materialising 1.84M rows",
+    "confidence": "high",
+    "root_cause_service": "synthetic-report",
+    "claims": [
+      {
+        "statement": "evidence ev-22926ff75c9b supports the stated cause",
+        "evidence_ids": [
+          "ev-22926ff75c9b"
+        ]
+      },
+      {
+        "statement": "evidence ev-e2a490f738d2 supports the stated cause",
+        "evidence_ids": [
+          "ev-e2a490f738d2"
+        ]
+      },
+      {
+        "statement": "evidence ev-1168777fe45f supports the stated cause",
+        "evidence_ids": [
+          "ev-1168777fe45f"
+        ]
+      }
+    ],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "39401356c536a2bd559757c040971f573e77acdecdeacf6e687cc7543f047b95"
+}
