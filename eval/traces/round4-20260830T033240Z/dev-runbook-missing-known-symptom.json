@@ -1,0 +1,98 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-runbook-missing-known-symptom",
+  "case_id": "dev-runbook-missing-known-symptom",
+  "config_fingerprint": "08e8390095db8b9cc8804988a1e54a96ee0aed6e1178a3f9b5e6ef8123660e63",
+  "recorded_at": "2026-08-30T03:32:53.505169+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "PROPOSE_ACTION",
+      "detail": "insufficient evidence",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "COMPLETE",
+      "detail": "insufficient_evidence",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [],
+  "diagnosis": {
+    "conclusion_type": "insufficient_evidence",
+    "root_cause": "not determined: no tool produced usable evidence",
+    "confidence": "none",
+    "root_cause_service": null,
+    "claims": [],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [
+      "no tool produced usable evidence"
+    ],
+    "proposed_action": null,
+    "recommended_next_step": "widen the evidence window or escalate to a human"
+  },
+  "digest": "72bf040d9f7dadc7e7f5b35428422e9067fc799b77bf9ff1d10c72bb582c1078"
+}

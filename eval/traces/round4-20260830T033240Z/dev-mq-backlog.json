@@ -1,0 +1,371 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-mq-backlog",
+  "case_id": "dev-mq-backlog",
+  "config_fingerprint": "08e8390095db8b9cc8804988a1e54a96ee0aed6e1178a3f9b5e6ef8123660e63",
+  "recorded_at": "2026-08-30T03:32:52.940559+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_queue_state",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_queue_state",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_queue_state",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_queue_state",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 21,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 22,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 23,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 24,
+      "node": "SELECT_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 25,
+      "node": "POLICY_CHECK",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 26,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 27,
+      "node": "OBSERVE",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 28,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 29,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 30,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 31,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 32,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 33,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 34,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 35,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-d8a052da8877",
+      "source_type": "get_queue_state",
+      "source_identity": "queue:synthetic-notify.work",
+      "content_hash": "d8a052da88777de747f15f6a09ebb389e8bb8c54faccca20f9075282cff25d40",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-8a402f79ee8d",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-notify",
+      "content_hash": "8a402f79ee8d37f06492a6ea73157302a1113193eef98194133ba28c76e1725d",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-93dfc46f929b",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-notify",
+      "content_hash": "93dfc46f929b526a7de4547485e940c41521e611d0b8ba7b6c1056c23de09d7f",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-90f83265736d",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-notify",
+      "content_hash": "90f83265736ded24ae4f859eb26d95adeba15e09555c52b01d4da1e07f1fd8a6",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-f0a20c218936",
+      "source_type": "get_recent_deployments",
+      "source_identity": "service:synthetic-notify",
+      "content_hash": "f0a20c2189365260ffa42908cc8e6efd613647d53acc4981d3d66edfb84ab0a2",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-35610d324839",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-mq-consumer-backlog#symptom",
+      "content_hash": "35610d3248391e2648ea0ce2804713af768c49a516c70626bc3306b55a41fd35",
+      "untrusted": true,
+      "document_id": "rb-mq-consumer-backlog",
+      "document_version": "1.1.0",
+      "section_id": "rb-mq-consumer-backlog#symptom"
+    },
+    {
+      "evidence_id": "ev-9319ad9019ca",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-queue-poison-message#symptom",
+      "content_hash": "9319ad9019ca06ddbc8ca7f6f335635d48349a51c94d4086e09af6b620227b09",
+      "untrusted": true,
+      "document_id": "rb-queue-poison-message",
+      "document_version": "1.0.0",
+      "section_id": "rb-queue-poison-message#symptom"
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "consumer throughput collapsed while publish rate stayed flat",
+    "confidence": "high",
+    "root_cause_service": "synthetic-notify",
+    "claims": [
+      {
+        "statement": "evidence ev-d8a052da8877 supports the stated cause",
+        "evidence_ids": [
+          "ev-d8a052da8877"
+        ]
+      },
+      {
+        "statement": "evidence ev-8a402f79ee8d supports the stated cause",
+        "evidence_ids": [
+          "ev-8a402f79ee8d"
+        ]
+      }
+    ],
+    "ruled_out": [
+      {
+        "possibility": "publish rate increased",
+        "reason": "the corresponding signal did not change during the window",
+        "evidence_ids": [
+          "ev-d8a052da8877"
+        ]
+      },
+      {
+        "possibility": "the v2.3.1 deployment changed consumer logic",
+        "reason": "the corresponding signal did not change during the window",
+        "evidence_ids": [
+          "ev-8a402f79ee8d"
+        ]
+      }
+    ],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "5b3db93b0ca9f8ed155768c792f1973dd12073dd870f1e2f384e31da6320aaf9"
+}

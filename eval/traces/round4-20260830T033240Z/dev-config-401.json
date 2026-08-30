@@ -1,0 +1,370 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-config-401",
+  "case_id": "dev-config-401",
+  "config_fingerprint": "08e8390095db8b9cc8804988a1e54a96ee0aed6e1178a3f9b5e6ef8123660e63",
+  "recorded_at": "2026-08-30T03:32:53.128334+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "SELECT_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "POLICY_CHECK",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 21,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 22,
+      "node": "OBSERVE",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 23,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 24,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 25,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 26,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 27,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 28,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 29,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 30,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 31,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 32,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 33,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 34,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 35,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-3597e398fa5e",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "3597e398fa5e08ec399430e9a9068d9df57958109b5b393c5fcd6b79d1f95c34",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-3e5abe686130",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "3e5abe68613096be9c08fe0ef4ef1968ae40365c475754b205e5cbf40f77c9d5",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-8c7824824c67",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "8c7824824c673ec32ea07250523a71f9f92d2321bfa3e50af54db458b6499095",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-95209968eb00",
+      "source_type": "get_recent_deployments",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "95209968eb00a89dd139e19d83c32ed3feaed248d7e25b3031b94b2261a12235",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-9dca20bc59ab",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-auth",
+      "content_hash": "9dca20bc59abbf6bafa0cea16809cc6b7ef9a820bf7b32da2045bd9555d59f4f",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-a29a9dec49b8",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-config-audience-mismatch#symptom",
+      "content_hash": "a29a9dec49b84c46ab5710c9b86713d8be214c466de24a0d5232c1be197a7e32",
+      "untrusted": true,
+      "document_id": "rb-config-audience-mismatch",
+      "document_version": "2.0.0",
+      "section_id": "rb-config-audience-mismatch#symptom"
+    },
+    {
+      "evidence_id": "ev-caa186e4c657",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-tls-certificate-expiry#symptom",
+      "content_hash": "caa186e4c65700b10162dcf1839ba517904bb5e736de5eabf6bf2af803f7ccdb",
+      "untrusted": true,
+      "document_id": "rb-tls-certificate-expiry",
+      "document_version": "1.0.0",
+      "section_id": "rb-tls-certificate-expiry#symptom"
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "v3.1.0 set auth.audience to the staging value, so the acquirer rejects tokens",
+    "confidence": "high",
+    "root_cause_service": "synthetic-checkout",
+    "claims": [
+      {
+        "statement": "evidence ev-3597e398fa5e supports the stated cause",
+        "evidence_ids": [
+          "ev-3597e398fa5e"
+        ]
+      },
+      {
+        "statement": "evidence ev-3e5abe686130 supports the stated cause",
+        "evidence_ids": [
+          "ev-3e5abe686130"
+        ]
+      },
+      {
+        "statement": "evidence ev-8c7824824c67 supports the stated cause",
+        "evidence_ids": [
+          "ev-8c7824824c67"
+        ]
+      }
+    ],
+    "ruled_out": [
+      {
+        "possibility": "synthetic-auth is unhealthy",
+        "reason": "the corresponding signal did not change during the window",
+        "evidence_ids": [
+          "ev-3597e398fa5e"
+        ]
+      }
+    ],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "56869700ec2a4461e22f3fa4bf01d8e208e6df76f3be0b93fe280f0067ae5bfe"
+}

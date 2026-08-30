@@ -434,7 +434,7 @@ ingress controller 的 Pod 标签。
 
 | 项 | 状态 |
 |---|---|
-| 提交代码后重跑冻结评测（M6 §10 A1） | **未做**。两轮报告 `working_tree_clean` 都是 false |
+| 提交代码后重跑冻结评测（M6 §10 A1） | **已做**。第 4 轮 commit `ca42a6a`、`working_tree_clean=true`、10 项达标 + Replay 一致 |
 | checkpoint 元数据落 MySQL | **未做**。仍在内存 |
 | LangGraph checkpointer | 仍是 `InMemorySaver` |
 | 检索 latency / cost 按阶段拆分 | **未做** |
@@ -484,7 +484,11 @@ M0 → M8 全部里程碑已交付。九份 Gate 报告与十份 ADR 在 `docs/`
 3. **CI 未在 GitHub 上实跑**（M7 §7.1、M8 §7.5）；**无真实 GPU**，
    vLLM 部分只有架构理解与客户端契约。
 
-最需要优先补的三件事，按代价从低到高：
+最需要优先补的两件事，按代价从低到高：
 - `pricing.py` 对自托管后端的计价（§7.6 第 1 条）——它会让一个安全机制静默失效
-- 提交代码后重跑一轮冻结评测（§7.8）——让 `working_tree_clean=true`
-- 动作工具的容器隔离（§7.2）——补完 M0 §9 的最后两项
+- 动作工具的容器隔离（§7.2）——补完 M0 §9 的最后两项（精确挂载、只读根文件系统）
+
+M6 §10 A1（提交后重跑冻结评测）已在第 4 轮完成：commit `ca42a6a`、
+`working_tree_clean=true`、10 项阈值达标 + Replay 一致。
+那一轮同时修了一个更重要的东西——冻结清单漏了「观测窗口」，
+导致第 1、2 轮的 Replay「一致」其实是运气（M6 报告 §5.2）。

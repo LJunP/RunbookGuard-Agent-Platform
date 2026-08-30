@@ -1,0 +1,380 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-retry-storm",
+  "case_id": "dev-retry-storm",
+  "config_fingerprint": "08e8390095db8b9cc8804988a1e54a96ee0aed6e1178a3f9b5e6ef8123660e63",
+  "recorded_at": "2026-08-30T03:32:53.395234+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 21,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 22,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 23,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 24,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 25,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 26,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 27,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 28,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 29,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 30,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 31,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 32,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 33,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 34,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 35,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-52afeb27d2ef",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-gateway",
+      "content_hash": "52afeb27d2ef446d0b3dcbe107c3feabf9414e8a0b81bf45c279e8d0c34c7e38",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-a9c95160a653",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-gateway",
+      "content_hash": "a9c95160a6532380e5f3650344a85168b0e2002147cbd5362b517b4728b32704",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-6180e1890fe8",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-gateway",
+      "content_hash": "6180e1890fe845a1eb482685ab25e28c13218118e2818197472cfe8bcc3c66d2",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-831f44f049bf",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-gateway",
+      "content_hash": "831f44f049bfcbb6945b86e2eda004e66bdc94b2ede8297e107b98fcf92e55cc",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-2273754c8985",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-gateway",
+      "content_hash": "2273754c8985b46636229f5cf37bc29c18e6443f3f9edf7eb862ae458b1b42cc",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-4af96b3c9eac",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-downstream-retry-storm#diagnosis",
+      "content_hash": "4af96b3c9eac85f105f9ede1108a9d2d7d8502115a42c3412d87a9942fa0bfb3",
+      "untrusted": true,
+      "document_id": "rb-downstream-retry-storm",
+      "document_version": "1.2.0",
+      "section_id": "rb-downstream-retry-storm#diagnosis"
+    },
+    {
+      "evidence_id": "ev-041e178a829f",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-downstream-retry-storm#precondition",
+      "content_hash": "041e178a829f5dd748ac7b7bfd8c7ab9ab76bbf8e7988e15849d8269dec0ed33",
+      "untrusted": true,
+      "document_id": "rb-downstream-retry-storm",
+      "document_version": "1.2.0",
+      "section_id": "rb-downstream-retry-storm#precondition"
+    },
+    {
+      "evidence_id": "ev-53003d6226c7",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-cache-stampede#symptom",
+      "content_hash": "53003d6226c77afc5445f464d63c045e3fcd383dfd5f13af7aa82f9205083ff7",
+      "untrusted": true,
+      "document_id": "rb-cache-stampede",
+      "document_version": "1.0.0",
+      "section_id": "rb-cache-stampede#symptom"
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "retries without backoff tripled outbound traffic; inbound never changed",
+    "confidence": "high",
+    "root_cause_service": "synthetic-gateway",
+    "claims": [
+      {
+        "statement": "evidence ev-52afeb27d2ef supports the stated cause",
+        "evidence_ids": [
+          "ev-52afeb27d2ef"
+        ]
+      },
+      {
+        "statement": "evidence ev-a9c95160a653 supports the stated cause",
+        "evidence_ids": [
+          "ev-a9c95160a653"
+        ]
+      },
+      {
+        "statement": "evidence ev-6180e1890fe8 supports the stated cause",
+        "evidence_ids": [
+          "ev-6180e1890fe8"
+        ]
+      }
+    ],
+    "ruled_out": [
+      {
+        "possibility": "inbound traffic increased",
+        "reason": "the corresponding signal did not change during the window",
+        "evidence_ids": [
+          "ev-52afeb27d2ef"
+        ]
+      }
+    ],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "192a2fd0a7ed7f932d71ec0839523946cde773bd72e0e0337f70ae64caf70da5"
+}

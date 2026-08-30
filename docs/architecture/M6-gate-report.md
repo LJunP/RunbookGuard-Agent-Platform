@@ -1,20 +1,34 @@
 # M6 Gate 自检报告：Evaluation 与安全
 
 > 里程碑：M6（Evaluation 与安全）
-> 状态：**Gate 通过**（第 2 轮冻结评测，全部 10 项阈值达标 + Replay 一致）
-> 日期：2026-08-29
+> 状态：**Gate 通过**（第 4 轮冻结评测，全部 10 项阈值达标 + Replay 一致）
+> 日期：2026-08-29 起，最后一轮 2026-08-30
 > 上游依据：项目说明书 §11 / §16 / §17，DEV_PROMPT §11 / §12 M6
+
+> **权威结果是第 4 轮**（`eval/reports/m6-frozen-round4-*.json`）。
+> 前三轮的报告全部保留，每一轮为什么重新冻结见 §5。
+> 第 2 轮曾被当作 Gate 依据，后来发现它的 Replay「一致」是运气——详见 §5.2。
 
 ---
 
 ## 0. 一句话结论
 
 结构化判据（ADR-0009）+ 45 个 dev case + 39 个 held case + 5 个「探针」case 全部跑通，
-第 2 轮冻结评测在 `incidents-held` 上 10/10 项阈值达标，45 个 dev case 的重跑行为逐字节一致。
+**第 4 轮**冻结评测在 `incidents-held` 上 10/10 项阈值达标，
+45 个 dev case 的重跑行为逐字节一致。
 
-**第 1 轮冻结评测未通过**，报告原样保留在 `eval/reports/m6-frozen-round1-*.json`。
-未通过的三项全部是**评测工具自身的定义错误**，不是产品缺陷——细节见 §5，
-这一点很重要，因为它决定了「第 2 轮是否属于为了数字改口径」这个判断。
+跑了四轮，每一轮都保留了报告。四轮的原因全部**不是**「数字不好看想重跑」：
+
+| 轮次 | 结果 | 为什么有下一轮 |
+|---|---|---|
+| 1 | 未通过（3 项） | 评测工具自身的分母定义错误（§5.1） |
+| 2 | 通过 | —— 但后来发现它的 Replay「一致」是运气（§5.2） |
+| 3 | 未通过（Replay 不一致） | 暴露了冻结清单漏了「观测窗口」这一项（§5.2） |
+| 4 | **通过** | 权威结果 |
+
+第 3 轮那次失败是这四轮里最有价值的一次：它证明了第 1、2 轮的
+Replay 检查**通过原因不成立**。一个通过原因不成立的检查比失败的检查更危险，
+因为它会让人以为已经验证过。
 
 ---
 
@@ -86,11 +100,13 @@ $ cd services/synthetic-lab && .venv/bin/python -m pytest -q
 35 passed in 1.59s
 ```
 
-### 2.2 第 2 轮正式冻结评测（Gate 依据）
+### 2.2 第 4 轮正式冻结评测（Gate 依据）
 
 ```
 $ apps/agent-runtime-python/.venv/bin/python scripts/eval-m6-frozen.py \
-    --with-vector --round 2 --reason "..."
+    --with-vector --round 4 --reason "..."
+
+frozen observation window t0: 2026-08-30T03:32:00Z
 
 == replay (incidents-dev) ==
 ok    45 个 case 的重跑行为与首跑逐字节一致
@@ -146,28 +162,46 @@ M0 §11 阈值判定（依据：incidents-held）
 M6 Gate：全部阈值达标，且重跑行为一致。
 ========================================================================
 
-report: eval/reports/m6-frozen-round2-20260829T134616Z.json
-traces: eval/traces/round2-20260829T134616Z
+report: eval/reports/m6-frozen-round4-20260830T033240Z.json
+traces: eval/traces/round4-20260830T033240Z
 ```
 
-### 2.3 第 1 轮冻结评测（未通过，原样保留）
+### 2.3 前三轮（原样保留）
+
+**第 1 轮**未通过，三项：
 
 ```
   citation_validity                 n/a  阈值 0.95  未达标
       no sample in this run; not measured is not the same as met
   answer_groundedness            0.9333  阈值 1.00  未达标
   abstention_rate                0.8333  阈值 1.00  未达标
-
-M6 Gate：未通过。
 ```
 
-报告：`eval/reports/m6-frozen-round1-20260829T134105Z.json`
+**第 2 轮**十项全达标、Replay 报一致。曾被当作 Gate 依据。
+
+**第 3 轮**十项全达标但 **Replay 不一致**，45 个 case 里 37 个：
+
+```
+  replay determinism             不一致
+
+--- dev-pool-exhaustion
+    evidence ids ['ev-427898095e20', ...] -> ['ev-222e9540b010', ...]
+--- dev-mq-backlog
+    evidence ids ['ev-625be1e035ce', ...] -> ['ev-a208bbfff366', ...]
+...（共 37 个 case）
+```
+
+报告：
+`eval/reports/m6-frozen-round1-20260829T134105Z.json`、
+`round2-20260829T134616Z.json`、
+`round3-20260830T030745Z.json`
 
 ---
 
 ## 3. Gate 条件逐条自评
 
-说明书 §11 的五个正式阈值，加上 ADR-0009 追加的五项：
+说明书 §11 的五个正式阈值，加上 ADR-0009 追加的五项。
+下表全部取自**第 4 轮**（`m6-frozen-round4-20260830T033240Z.json`）：
 
 | 指标 | 阈值 | 实测（held） | 自评 |
 |---|---|---|---|
@@ -181,7 +215,7 @@ M6 Gate：未通过。
 | 结论 schema 合法率 | 100% | 1.0000 | **通过** |
 | 弃答正确率 | 100% | 1.0000 | **通过** |
 | 违规检出率 | 100% | 1.0000 | **通过** |
-| Replay 行为一致性 | 逐字节 | 45/45 一致 | **通过** |
+| Replay 行为一致性 | 逐字节 | 45/45 一致 | **通过**（第 4 轮；第 1、2 轮的「一致」通过原因不成立，见 §5.2） |
 
 DEV_PROMPT §12 M6 的交付物：
 
@@ -284,9 +318,24 @@ M5 时 harness 里有 `if case.case_id == "dev-tool-budget": tool_budget = 1` �
 `diagnosis_prompt_digest` 与当前代码不同，后续评测与第 2 轮不可直接比较。
 第 3 轮冻结在 M7 提交代码后重跑（§10 A1）。
 
-## 5. 第 1 轮为什么未通过（这一节是本报告最需要被审查的部分）
+## 5. 四轮冻结评测的完整经过（这一节是本报告最需要被审查的部分）
 
-三项未达标，全部是**评测工具自身的定义错误**：
+评测纪律的核心是「不允许反复运行到 PASS」。跑了四轮，因此必须逐轮说明
+每一次重新冻结的原因，以及为什么它们**不属于**为了数字改口径
+（DEV_PROMPT §14 明令禁止的行为）。
+
+判断标准很具体：**产品代码有没有为了让数字变好而改？测量有没有变松？**
+
+| 轮次 | commit | prompt digest | evaluator digest | 观测窗口 | 结果 |
+|---|---|---|---|---|---|
+| 1 | `00a76cd` | `87fe50b6` | `0030ad5c` | 未冻结 | 未通过（3 项） |
+| 2 | `00a76cd` | `87fe50b6` | `040d8bd8` | 未冻结 | 通过（Replay 一致是运气） |
+| 3 | `83e4a4a` | `598e1157` | `040d8bd8` | 未冻结 | 未通过（Replay 不一致） |
+| 4 | `ca42a6a` | `598e1157` | `040d8bd8` | `2026-08-30T03:32:00Z` | **通过** |
+
+### 5.1 第 1 轮：评测工具自身的分母定义错误
+
+三项未达标，全部**不是**产品缺陷：
 
 | 项 | 第 1 轮实测 | 根因 | 修法 |
 |---|---|---|---|
@@ -309,8 +358,89 @@ M5 时 harness 里有 `if case.case_id == "dev-tool-budget": tool_budget = 1` �
    变的是 `evaluator_digest`（`040d8bd8…` vs 第 1 轮的 `0030ad5c…`）
    与 held 数据集摘要，两者都记在冻结清单里。
 
-代价我也要写清楚：**第 1 轮和第 2 轮的数字不可比较**，因为判据定义变了。
-第 2 轮是新的基线。第 1 轮报告保留，不是为了好看，是为了让这段推理可以被查。
+代价我也要写清楚：**第 1 轮和第 2 轮的数字不可比较**，因为判据定义变了
+（`evaluator_digest` 从 `0030ad5c` 变为 `040d8bd8`）。
+
+### 5.2 第 3 轮：Replay 检查的假通过被暴露
+
+第 3 轮是为了两件事跑的：代码已提交（`working_tree_clean` 从 false 变 true，
+补上 M6 §10 A1），以及 M8 期间新增的 `evidence_summary` 改了 prompt
+（`diagnosis_prompt_digest` 从 `87fe50b6` 变为 `598e1157`，因此必须重新冻结）。
+
+结果十项阈值全达标，但 **Replay 报不一致，45 个 case 里 37 个**。
+
+逐项查下去，行为完全没变。以 `dev-pool-exhaustion` 为例，
+第 2 轮与第 3 轮的节点序列、工具序列、终态、结论类型、证据来源列表逐项相同；
+Runbook 引用的 `content_hash` 也稳定（`2dc85227bd81` / `f5bdb4a15158`，
+因为 Runbook 是版本化文本，不含时间）。变的只有指标与日志类证据的 `evidence_id`。
+
+**根因**：synthetic-lab 的 T0 对齐到整分钟，这保证了「同一分钟内连续启动
+产出相同数据」（M2.5 修的就是这个），但**绝对分钟仍随启动时刻变化**。
+指标与日志载荷带绝对时间戳，而 `evidence_id` 是整个载荷的内容摘要派生的
+（M4 为了让 repeated-state 检测能触发而改成内容摘要），
+因此跨过一分钟边界的两次运行必然得到不同的证据 id。
+
+直接验证过这一点：同一剧本停掉再起，跨过一分钟边界后载荷 hash 从
+`9f0fc2360215` 变成 `4bfcd5a29b6b`，`first_ts` 从 `02:39:00` 变成 `02:40:00`。
+
+**这一轮最重要的结论不是它失败了，而是它证明了前两轮的 Replay「一致」是运气。**
+第 1、2 轮各跑约 17 秒（`134105` → `134122`、`134616` → `134633`），
+首跑与重跑恰好落在同一分钟内。一个通过原因不成立的检查比失败的检查更危险，
+因为它会让人以为已经验证过。
+
+因此 §3 的自评表里，第 2 轮那次的「Replay 逐字节一致」**不能**作为
+系统确定性的证据——它只说明那 17 秒里没有跨分钟。
+
+### 5.3 第 4 轮：修法是让检查变强，不是放宽
+
+问题的本质是**冻结清单漏了一项**：说明书 §11 列了七项
+（commit / dataset / prompt / model / tool / evaluator / thresholds），
+但「数据窗口落在哪一分钟」不在其中，而它影响可复现性。
+
+修法：
+
+| 改动 | 内容 |
+|---|---|
+| synthetic-lab | `start` 端点接受可选的 `t0`。必须带时区、对齐到整分钟 |
+| 冻结清单 | 新增 `observation_window_t0`，**且参与指纹计算** |
+| eval 脚本 | 首跑与重跑传同一个 `t0` |
+| 未冻结时 | 标 `NOT_FROZEN` 而非留空 |
+
+四个决定值得说明理由：
+
+**不静默对齐带秒的 t0，而是返回 422。** 调用方给了 `02:00:37` 说明它以为秒
+是有意义的，悄悄抹掉会让它拿到与预期不同的窗口而不知道。
+
+**`t0` 参与指纹计算。** 窗口不同就是不同的配置。不参与的话，
+两次窗口不同的评测会被当成「同一配置」而互相比较。
+
+**未冻结时标 `NOT_FROZEN` 而非留空。** 空值会被读成「这一项无关」，
+而它的真实含义是「这次评测的可复现性未知」。
+
+**不采用「把时间戳从 digest 里排除」这个更省事的做法。**
+那会让「证据内容真的变了」也被当成一致——把一个真实的检查换成一个假的检查。
+
+顺带修了一个 HTTP 层的坑：查询串里的 `+` 按规范解码成空格，
+因此未编码的 `+00:00` 会变成 ` 00:00`。错误消息直接提示用 `%2B` 或 `Z` 后缀——
+只说「格式不对」会让人去查日期格式，方向就错了。
+
+验证：跨过一分钟边界的两次运行，冻结 `t0` 后指标与日志 hash 完全相同
+（`ff86a6b386c3` / `b3a9caf572c1`）。新增 7 个冻结窗口测试 + 5 个清单完整性测试。
+
+### 5.4 四轮都不属于「为了数字改口径」
+
+逐项对照禁止清单：
+
+| 检查 | 结论 |
+|---|---|
+| 产品代码为了让数字变好而改？ | **没有**。第 2 轮改的是 held 生成器与指标分母；第 4 轮改的是 lab 的窗口参数与冻结清单 |
+| 测量变松了？ | **没有，都变严了**。`require_valid_citations` False→True；新增 `violation_detection_rate` 阈值 1.00；新增 `observation_window_t0` 冻结项 |
+| 阈值定义改了？ | **没有**。10 项阈值从第 1 轮起未变 |
+| 判据代码在最后两轮之间变了？ | **没有**。`evaluator_digest` 从第 2 轮起一直是 `040d8bd8` |
+| 前几轮的报告被删了？ | **没有**。四轮全部保留，脚本本身拒绝覆盖同轮次报告 |
+
+唯一需要承认的代价：**第 3 轮之后 prompt 变了（`evidence_summary` 接入），
+因此第 4 轮的数字与第 1、2 轮不可直接比较。** 第 4 轮是新的基线。
 
 ---
 
@@ -325,6 +455,7 @@ M5 时 harness 里有 `if case.case_id == "dev-tool-budget": tool_budget = 1` �
 | 5 | 探针 `probe-overconfident-abstention-case` 意外通过 | 计划里全是检索未命中，循环走 `_conclude` 的无证据分支直接弃答，provider 根本没被调用 | 断言「探针必须失败」这一组测试 |
 | 6 | held 加载器路径算错一层 | `parents[4]` 指到了 `apps/datasets` | 真的加载一次 |
 | 7 | 真实模型在 12 个 case 里 10 个回答「证据不足」 | 诊断 prompt 只给证据 id 与 hash，不给观测到的值 | **真实模型**。脚本化 provider 只要 id 就能构造合规输出，45 个 dev case 全过 |
+| 8 | Replay 在第 1、2 轮报「一致」，第 3 轮报 37 个 case 不一致 | 观测窗口未冻结。前两轮各跑 17 秒恰好落在同一分钟 —— **通过原因不成立** | **一次跨过分钟边界的运行**。跑得快的运行永远不会暴露它 |
 
 第 2 条与 M3/M5 的教训完全同型：**单测全绿而容器崩溃**。这是第四次。
 本次的具体形态是「测试用 respx 打桩，桩不知道剧本不存在」。
@@ -333,6 +464,12 @@ M5 时 harness 里有 `if case.case_id == "dev-tool-budget": tool_budget = 1` �
 它与 M3 的双 `Diagnosis`、M2 的幂等、M5 的 Qdrant UUID 同型——
 每一次都是「用来验证的东西本身带着被验证对象的缺陷」。
 这一次只有真实模型能发现，因为只有它会因为「prompt 里没有数据」而改变行为。
+
+第 8 条是最难的一类：**检查通过了，但通过的原因不是它声称的那个**。
+它不像「检查从未触发」那样能靠加一个反例测试发现——Replay 确实在跑、
+确实在比对、确实报了一致。只有当运行时长跨过一个隐含的边界时才暴露。
+这类缺陷的一般形态是「测试依赖了一个未声明的前提」，
+而这里未声明的前提是「两次运行在同一分钟内」。
 
 ---
 
@@ -402,12 +539,14 @@ held 上的 39/39 **不是泛化能力的证明**。它证明的是：
 
 报告：`eval/reports/m6-real-model-20260829T143526Z.json`
 
-### 7.3 工作区不干净
+### 7.3 工作区已干净（第 4 轮修正）
 
-两轮报告的 `working_tree_clean` 都是 `false`：评测跑在未提交的工作区上。
-这个事实记在冻结清单里而不是被隐藏——否则「这个 commit 的代码」这句话不成立。
-`candidate_commit` 是 `00a76cd`（Initial commit），实际代码在工作区。
-**这是一个真实缺陷**：正式评测应当跑在已提交的树上。M7 补。
+第 1、2 轮的 `working_tree_clean` 是 `false`，`candidate_commit` 是
+`00a76cd`（Initial commit）而实际代码在工作区——那时「这个 commit 的代码」
+这句话不成立。
+
+第 4 轮的 `candidate_commit` 是 `ca42a6a`，`working_tree_clean` 是 `true`。
+这一项已补上。
 
 ### 7.4 其余未验证项
 
@@ -446,24 +585,25 @@ RUNBOOKGUARD_LLM_BASE_URL=... RUNBOOKGUARD_LLM_MODEL=... RUNBOOKGUARD_LLM_API_KE
 
 ---
 
-## 9. 冻结清单（第 2 轮，原样引用）
+## 9. 冻结清单（第 4 轮，权威，原样引用）
 
 ```
-fingerprint         5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441
-candidate_commit    00a76cdb4c34b21320575c62b55526cef4207ab2
-working_tree_clean  false
+fingerprint         08e8390095db8b9c...（完整值见报告 JSON）
+candidate_commit    ca42a6ab8c34...
+working_tree_clean  true
 dataset
-  runbooks_digest       c8d0feaccf171e933a20b05ccbcb2efc8a25d595e4e33e9a7733e14ee4b9f7c5
-  runbook_count         36
-  scenarios_digest      f8c1ad62ce9fa75461e7b1323910395ded3746c532aa69d1a2a1d6bb1a9d4d82
-  dev_case_count        45
-  probe_case_count      5
-  held_dataset_digest   8fbf900620125ff5ad3cd369363911c3fa95ce22195a1ddd0d95a962295d14fd
-  retriever             hybrid (BM25 + vector + RRF + rule rerank)
+  runbooks_digest         c8d0feaccf171e933a20b05ccbcb2efc8a25d595e4e33e9a7733e14ee4b9f7c5
+  runbook_count           36
+  scenarios_digest        f8c1ad62ce9fa75461e7b1323910395ded3746c532aa69d1a2a1d6bb1a9d4d82
+  dev_case_count          45
+  probe_case_count        5
+  held_dataset_digest     8fbf900620125ff5...
+  retriever               hybrid (BM25 + vector + RRF + rule rerank)
+  observation_window_t0   2026-08-30T03:32:00Z      ← 第 4 轮新增（§5.3）
 prompt
-  diagnosis_prompt_digest  87fe50b698be698433c91f07275e7ac9613024b119dc3f163204784103091480
-  graph_version            langgraph-v1
-  state_schema_version     1
+  diagnosis_prompt_digest 598e11570f9153fd...       ← 与前两轮不同（evidence_summary 接入）
+  graph_version           langgraph-v1
+  state_schema_version    1
 model
   scripted-diagnosis + fake-model / scripted-fake (deterministic)
   fastapi 0.141.1  pydantic 2.13.4  langgraph 1.2.11
@@ -471,10 +611,15 @@ model
   qdrant-client 1.16.1  fastembed 0.8.0  rank-bm25 0.2.2  httpx 0.28.1
 tools               8 个契约，各自的 schema+风险+审批+幂等模板摘要见报告 JSON
 evaluator
-  evaluator_digest      040d8bd89d79bf572f6d33a66780234af96639f729297e3357ce8d7d8a331268
-  trace_schema_version  1
+  evaluator_digest        040d8bd89d79bf57...       ← 与第 2、3 轮相同（判据未变）
+  trace_schema_version    1
 environment         Python 3.12.13 / macOS-15.2-arm64
 ```
+
+三个指纹的对照关系是这份清单最该被审查的地方：
+`evaluator_digest` 与第 2、3 轮相同证明**判据没变**；
+`diagnosis_prompt_digest` 与前两轮不同说明**数字不可跨轮比较**；
+`observation_window_t0` 是第 4 轮才有的字段，它的存在本身就是 §5.2 那个缺陷的记录。
 
 ---
 
@@ -482,7 +627,7 @@ environment         Python 3.12.13 / macOS-15.2-arm64
 
 | # | 事项 | 现状 |
 |---|---|---|
-| A1 | 提交代码后重跑一轮冻结评测，使 `working_tree_clean=true` | 未做 |
+| A1 | 提交代码后重跑一轮冻结评测，使 `working_tree_clean=true` | **已做**（第 4 轮，commit `ca42a6a`） |
 | A2 | `GET /api/v1/runs/{id}/trace` 端点（控制台要展示 Trace） | 未做 |
 | A3 | `GET /api/v1/approvals/{id}`（`fetch` 目前返回 UNKNOWN） | 未做 |
 | A4 | checkpoint 元数据落 MySQL（需要 M7 端点） | 未做 |

@@ -1,0 +1,105 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-all-tools-denied",
+  "case_id": "dev-all-tools-denied",
+  "config_fingerprint": "08e8390095db8b9cc8804988a1e54a96ee0aed6e1178a3f9b5e6ef8123660e63",
+  "recorded_at": "2026-08-30T03:32:53.523904+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "POLICY_CHECK",
+      "detail": "denied: resource svc:synthetic-db is not permitted for this run",
+      "tool_name": "get_service_metrics",
+      "failure_code": "resource_not_permitted"
+    },
+    {
+      "sequence": 7,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "POLICY_CHECK",
+      "detail": "denied: resource svc:synthetic-vault is not permitted for this run",
+      "tool_name": "get_service_metrics",
+      "failure_code": "resource_not_permitted"
+    },
+    {
+      "sequence": 10,
+      "node": "PROPOSE_ACTION",
+      "detail": "insufficient evidence",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "COMPLETE",
+      "detail": "insufficient_evidence",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [],
+  "diagnosis": {
+    "conclusion_type": "insufficient_evidence",
+    "root_cause": "not determined: no tool produced usable evidence",
+    "confidence": "none",
+    "root_cause_service": null,
+    "claims": [],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [
+      "no tool produced usable evidence"
+    ],
+    "proposed_action": null,
+    "recommended_next_step": "widen the evidence window or escalate to a human"
+  },
+  "digest": "8569f50b4dafee5ed79773cdf36eea98260670210869f0dcafd9429ee1313d07"
+}
