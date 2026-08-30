@@ -1,0 +1,222 @@
+# NetworkPolicy：默认拒绝，逐条放行。
+#
+# **实测前提**：kindnetd v20250512 会执行 NetworkPolicy
+# （scripts/verify-networkpolicy-enforcement.sh 实测：deny-all 后连接从 200 变 000）。
+# 若换到不执行策略的 CNI，这些对象仍会被 apply 且 kubectl 显示存在，
+# 但**不会生效**——「对象存在」与「策略在拦」是两个不同的事实。
+#
+# 设计原则：先 deny-all（ingress + egress），再按实际调用关系逐条放行。
+# 反过来做（先放行常见路径，再补 deny）永远补不完，因为「常见」是个主观判断。
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: runbookguard
+spec:
+  # 空 podSelector = 命名空间内所有 Pod。
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  # 无规则 = 全拒。下面的策略是**叠加**的（NetworkPolicy 是白名单并集）。
+---
+# DNS 必须放行，否则所有 Service 名解析失败，表现为「服务之间连不上」，
+# 排查时很容易误判成策略配错了具体端口。这条要第一个加。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: runbookguard
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# control-plane：接受控制台与集群外的入站，出站只到三个中间件。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: control-plane-policy
+  namespace: runbookguard
+spec:
+  podSelector:
+    matchLabels:
+      app: control-plane
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # 来自 agent-runtime（审批、Trace 上报、Worker 生命周期）。
+    - from:
+        - podSelector:
+            matchLabels:
+              app: agent-runtime
+      ports:
+        - protocol: TCP
+          port: 8080
+    # NodePort 流量的源地址是节点 IP，不是 Pod IP，因此无法用 podSelector 表达。
+    # 这里放行整个集群 CIDR 之外的来源——代价是控制台以外的宿主机进程也能访问。
+    # 生产环境应当用 Ingress + 认证代理替代 NodePort，那时这条可以收紧到
+    # ingress controller 的 Pod 标签。
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              tier: data
+      ports:
+        - protocol: TCP
+          port: 3306
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 5672
+---
+# agent-runtime：只能被 control-plane 访问（诊断请求），
+# 出站只到 control-plane 与 synthetic-lab。
+#
+# **它不能访问公网**（M0 §9 的 egress allowlist）。这条策略不含任何
+# 到集群外的 egress 规则，因此默认拒绝生效。
+# 用真实模型时需要显式加一条到模型网关的规则——那是一个刻意的、
+# 需要被审查的动作，而不是默认就通。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-runtime-policy
+  namespace: runbookguard
+spec:
+  podSelector:
+    matchLabels:
+      app: agent-runtime
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: control-plane
+      ports:
+        - protocol: TCP
+          port: 8100
+    # 演练脚本从宿主机 port-forward 进来验证行为。
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8100
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: control-plane
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - podSelector:
+            matchLabels:
+              app: synthetic-lab
+      ports:
+        - protocol: TCP
+          port: 8090
+---
+# synthetic-lab：只接受 agent-runtime 的入站。
+#
+# 它**没有任何 egress 规则**（除了上面的 DNS）：合成故障数据源不需要
+# 访问任何东西。这也是「工具的数据来源不能被用作跳板」的落点。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: synthetic-lab-policy
+  namespace: runbookguard
+spec:
+  podSelector:
+    matchLabels:
+      app: synthetic-lab
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: agent-runtime
+      ports:
+        - protocol: TCP
+          port: 8090
+    # 演练脚本要能启停剧本。
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8090
+  egress: []
+---
+# 中间件：只接受 tier=app 的入站，自身不出站。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: data-tier-policy
+  namespace: runbookguard
+spec:
+  podSelector:
+    matchLabels:
+      tier: data
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: app
+      ports:
+        - protocol: TCP
+          port: 3306
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 5672
+        - protocol: TCP
+          port: 15692
+---
+# console：只接受集群外入站（浏览器），不主动出站。
+# 浏览器直连控制面，因此 console 的 Pod 本身不需要访问 control-plane。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: console-policy
+  namespace: runbookguard
+spec:
+  podSelector:
+    matchLabels:
+      app: console
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8081
+  egress: []

@@ -1,0 +1,309 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-retry-storm-downstream-is-victim",
+  "case_id": "dev-retry-storm-downstream-is-victim",
+  "config_fingerprint": "5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441",
+  "recorded_at": "2026-08-29T13:46:29.331905+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 21,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 22,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 23,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 24,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 25,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 26,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 27,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 28,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 29,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 30,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-3dd88b3c3db1",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-inventory",
+      "content_hash": "3dd88b3c3db1b6ea5899abb96c4bfa2e9fc957d9397af1426201a796b4a04e38",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-721cc723dd9e",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-inventory",
+      "content_hash": "721cc723dd9eaf0017e48618f58b46a7f3a2e3a819ac56da448c0d40148de765",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-ed31fc2478cb",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-gateway",
+      "content_hash": "ed31fc2478cb7a73fe0b6b41dcc2027b9e9311edbe99aff977f070d09b9aa718",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-126263f11447",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-gateway",
+      "content_hash": "126263f1144707440036f5e7e26f843a7762ae4a48309cb353b449208a7a6282",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-f2d94b66b5c8",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-inventory",
+      "content_hash": "f2d94b66b5c88224e2b8ba81067e3707efcc7894c737c5f03de2d46bdff4bd5c",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "the inventory service is absorbing amplified traffic produced by the gateway",
+    "confidence": "high",
+    "root_cause_service": "synthetic-gateway",
+    "claims": [
+      {
+        "statement": "evidence ev-3dd88b3c3db1 supports the stated cause",
+        "evidence_ids": [
+          "ev-3dd88b3c3db1"
+        ]
+      },
+      {
+        "statement": "evidence ev-721cc723dd9e supports the stated cause",
+        "evidence_ids": [
+          "ev-721cc723dd9e"
+        ]
+      }
+    ],
+    "ruled_out": [
+      {
+        "possibility": "synthetic-inventory received more genuine user traffic",
+        "reason": "the corresponding signal did not change during the window",
+        "evidence_ids": [
+          "ev-3dd88b3c3db1"
+        ]
+      }
+    ],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "1e264aeea1eacd84a1360448dce006a5106c47bf49b96e08c278d472e4414fa4"
+}

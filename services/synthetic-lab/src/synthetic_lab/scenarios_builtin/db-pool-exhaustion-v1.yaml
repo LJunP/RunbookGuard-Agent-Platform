@@ -1,0 +1,67 @@
+id: db-pool-exhaustion-v1
+version: 1
+description: >
+  v1.5.0 发布引入未关闭的连接路径，synthetic-orders 的连接池被耗尽，
+  请求排队后超时。对应 M0 场景 S1（唯一的完整正向基准场景）。
+seed: 20260826
+timeline:
+  baseline_minutes: 30
+  incident_minutes: 5
+sample_interval_seconds: 30
+
+services:
+  - name: synthetic-orders
+    metrics:
+      db_pool_active:
+        baseline: 12
+        incident: 50
+        shape: ramp
+        unit: connections
+        # 池上限是硬边界，饱和时恰好等于 50。加噪声会让「使用率达到 1.0」这条
+        # S1 必需证据随机不成立。
+        noise: 0
+      db_pool_max:
+        baseline: 50
+        incident: 50
+        shape: flat
+        unit: connections
+        noise: 0
+      db_pool_wait_count:
+        baseline: 0
+        incident: 180
+        shape: ramp
+        unit: requests
+      http_p99_latency_ms:
+        baseline: 180
+        incident: 3400
+        shape: ramp
+        unit: ms
+      http_error_rate:
+        baseline: 0.002
+        incident: 0.12
+        shape: ramp
+        unit: ratio
+      http_request_rate:
+        baseline: 240
+        incident: 240
+        shape: flat
+        unit: rps
+    logs:
+      - level: INFO
+        message: "GET /api/orders completed in 174ms"
+        phase: baseline
+        per_minute: 4
+      - level: ERROR
+        message: "connection pool exhausted: timeout acquiring connection after 5000ms (pool=orders-primary)"
+        phase: incident
+        per_minute: 12
+      - level: WARN
+        message: "slow query detected: SELECT * FROM orders WHERE tenant_id = ? took 4820ms"
+        phase: incident
+        per_minute: 5
+    deployments:
+      - version: v1.5.0
+        previous_version: v1.4.2
+        at_minute: -10
+        changed_config_keys:
+          - orders.repository.connectionLeaseMode

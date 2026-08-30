@@ -1,0 +1,264 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-config-401-downstream-is-healthy",
+  "case_id": "dev-config-401-downstream-is-healthy",
+  "config_fingerprint": "5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441",
+  "recorded_at": "2026-08-29T13:46:29.053499+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "SELECT_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "POLICY_CHECK",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 21,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 22,
+      "node": "OBSERVE",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 23,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 24,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 25,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-292c13c158e3",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "292c13c158e368ae1d9bd73976b456f58f99d05f96fa792dee975a329c22c65b",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-e5e20b29b0dc",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-auth",
+      "content_hash": "e5e20b29b0dcfe9778cce99a3929ef8cc63c985678c5da9ab3f7a78794d00d2f",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-c8721b9e17f8",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-auth",
+      "content_hash": "c8721b9e17f8b3b058bbaf24e5b623080d9db89f3438197fc1893693beb42649",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-c9284138b94a",
+      "source_type": "get_recent_deployments",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "c9284138b94a39f4fc57a4500db8ada769fe0aec1f943ede31279509112009c8",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "the caller sends a wrong audience; the downstream is behaving correctly",
+    "confidence": "high",
+    "root_cause_service": "synthetic-checkout",
+    "claims": [
+      {
+        "statement": "evidence ev-292c13c158e3 supports the stated cause",
+        "evidence_ids": [
+          "ev-292c13c158e3"
+        ]
+      },
+      {
+        "statement": "evidence ev-e5e20b29b0dc supports the stated cause",
+        "evidence_ids": [
+          "ev-e5e20b29b0dc"
+        ]
+      }
+    ],
+    "ruled_out": [
+      {
+        "possibility": "synthetic-auth latency or error rate degraded",
+        "reason": "the corresponding signal did not change during the window",
+        "evidence_ids": [
+          "ev-292c13c158e3"
+        ]
+      }
+    ],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "6b68d4f4fef5b0d0e7b49d6a9a7ccdcc4c7e31d94f5ecadcf0984ffa41bba999"
+}

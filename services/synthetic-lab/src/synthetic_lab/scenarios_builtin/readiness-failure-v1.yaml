@@ -1,0 +1,77 @@
+id: readiness-failure-v1
+version: 1
+description: >
+  synthetic-search 新版本把 readiness 探针指向一个尚未就绪的索引加载路径，
+  Pod 反复被判为未就绪并从 Service 摘除，可用副本数下降。
+  关键设定：liveness 正常、进程没有崩溃——重启不会解决问题。
+  对应说明书 §11 第 5 类。
+seed: 20260902
+timeline:
+  baseline_minutes: 30
+  incident_minutes: 10
+sample_interval_seconds: 30
+
+services:
+  - name: synthetic-search
+    metrics:
+      readiness_probe_failure_count:
+        baseline: 0
+        incident: 96
+        shape: ramp
+        unit: count
+      liveness_probe_failure_count:
+        # 恒为 0 是「进程活着，只是没就绪」的判据。噪声会让它变成非 0。
+        baseline: 0
+        incident: 0
+        shape: flat
+        unit: count
+        noise: 0
+      ready_replicas:
+        baseline: 4
+        incident: 1
+        shape: ramp
+        unit: count
+        noise: 0
+      desired_replicas:
+        baseline: 4
+        incident: 4
+        shape: flat
+        unit: count
+        noise: 0
+      http_error_rate:
+        baseline: 0.001
+        incident: 0.24
+        shape: ramp
+        unit: ratio
+      index_warmup_seconds:
+        baseline: 8
+        incident: 95
+        shape: ramp
+        unit: seconds
+    logs:
+      - level: INFO
+        message: "search index warm, readiness endpoint returning 200"
+        phase: baseline
+        per_minute: 3
+      - level: WARN
+        message: "readiness probe failed: GET /readyz returned 503 (index segments loaded 3/11)"
+        phase: incident
+        per_minute: 14
+      - level: INFO
+        message: "endpoint removed from service synthetic-search by kubelet readiness gate"
+        phase: incident
+        per_minute: 5
+    deployments:
+      - version: v4.2.0
+        previous_version: v4.1.7
+        at_minute: -2
+        changed_config_keys:
+          - search.readiness.requireFullIndex
+          - search.index.segmentPrefetch
+    runtime_events:
+      - event_type: ReadinessProbeFailed
+        exit_code: null
+        reason: "readiness probe returned 503 while index segments were still loading"
+        count: 12
+        first_at_minute: 1
+        interval_minutes: 1

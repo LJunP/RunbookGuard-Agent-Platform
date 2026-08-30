@@ -1,0 +1,22 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-version-incompatible",
+  "case_id": "dev-version-incompatible",
+  "config_fingerprint": "0860a4f98c5fa2b1d4fd5797226df347f602a5ac3aeb3dac6e379629eec62071",
+  "recorded_at": "2026-08-29T13:41:18.797057+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "version_incompatible",
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "FAILED",
+      "detail": "graph or state schema version is incompatible",
+      "tool_name": null,
+      "failure_code": "version_incompatible"
+    }
+  ],
+  "evidence": [],
+  "diagnosis": null,
+  "digest": "f22aba1fb6c4538bbcddcc274553bdb64faf8dbf690af56770ca6b2cffad5217"
+}

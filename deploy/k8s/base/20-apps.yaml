@@ -1,0 +1,388 @@
+# 应用：control-plane / agent-runtime / synthetic-lab / console。
+#
+# 三类健康检查全部分离（说明书 §20 硬要求）：
+#   startupProbe   —— 「还在启动」。它未通过时另两个探针不跑。
+#   readinessProbe —— 「能不能接流量」。失败只摘除 Endpoint，不重启。
+#   livenessProbe  —— 「进程是不是死了」。失败会重启，因此阈值必须最宽松。
+#
+# 三者配同样的阈值是一个常见错误，会把「启动慢」变成「重启风暴」，
+# 把「暂时过载」变成「被杀掉」。datasets 里 rb-readiness-probe-failure 与
+# rb-container-oomkilled 描述的正是这两种形态。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: synthetic-lab
+  namespace: runbookguard
+spec:
+  selector:
+    app: synthetic-lab
+  ports:
+    - port: 8090
+      targetPort: 8090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synthetic-lab
+  namespace: runbookguard
+  labels:
+    app: synthetic-lab
+    tier: lab
+spec:
+  # 两个副本：演练要看「删掉一个 Pod 后服务仍可用」。
+  # 单副本时那个演练只能看到「服务中断然后恢复」。
+  replicas: 2
+  selector:
+    matchLabels:
+      app: synthetic-lab
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: synthetic-lab
+        tier: lab
+    spec:
+      # 把副本分散到不同节点。同节点上的两个副本无法验证节点级故障。
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: synthetic-lab
+      containers:
+        - name: synthetic-lab
+          image: runbookguard/synthetic-lab:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # preStop 的 sleep 是解决一个真实竞态的**唯一**办法：
+          # Pod 被删除时，kubelet 立刻发 SIGTERM，而 Endpoint 的摘除要经过
+          # apiserver → EndpointSlice controller → 每个节点的 kube-proxy 传播。
+          # 这两件事并行发生，因此在传播完成前仍有新连接被路由到正在关闭的 Pod。
+          #
+          # 实测：不加它时删一个副本会产生 1 次非 200（演练第 4 项）。
+          # 这不是测试的问题，是部署配置的缺陷——真实发布同样会掉请求。
+          #
+          # sleep 期间容器仍然正常服务，只是不再被算作"新的"目标。
+          # 时长要大于传播延迟（kind 上约 1~2s），且小于 terminationGracePeriodSeconds。
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "8"]
+          startupProbe:
+            httpGet: { path: /health, port: 8090 }
+            periodSeconds: 3
+            failureThreshold: 20
+          readinessProbe:
+            httpGet: { path: /health, port: 8090 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /health, port: 8090 }
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          volumeMounts:
+            # readOnlyRootFilesystem 之后仍需可写的 /tmp：
+            # uvicorn 与 Python 的临时文件都往那里写。
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-plane
+  namespace: runbookguard
+spec:
+  selector:
+    app: control-plane
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-plane-nodeport
+  namespace: runbookguard
+spec:
+  type: NodePort
+  selector:
+    app: control-plane
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-plane
+  namespace: runbookguard
+  labels:
+    app: control-plane
+    tier: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: control-plane
+  strategy:
+    rollingUpdate:
+      # maxUnavailable: 0 —— 滚动发布期间必须始终有可用副本。
+      # 演练里会验证这一点：滚动过程中持续请求不应出现 5xx。
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: control-plane
+        tier: app
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: control-plane
+      containers:
+        - name: control-plane
+          image: runbookguard/control-plane:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef: { name: runbookguard-config }
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: runbookguard-secrets, key: MYSQL_PASSWORD }
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef: { name: runbookguard-secrets, key: RABBITMQ_USER }
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: runbookguard-secrets, key: RABBITMQ_PASSWORD }
+          securityContext:
+            runAsNonRoot: true
+            # 必须给数字 uid，不能只靠镜像里的 `USER runbookguard`：
+            # kubelet 无法解析镜像里的**用户名**是否非 root，会直接拒绝创建容器
+            # （Error: container has runAsNonRoot and image has non-numeric user）。
+            # 这个值必须与 Dockerfile 里 useradd 出来的 uid 一致。
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # preStop 的 sleep 是解决一个真实竞态的**唯一**办法：
+          # Pod 被删除时，kubelet 立刻发 SIGTERM，而 Endpoint 的摘除要经过
+          # apiserver → EndpointSlice controller → 每个节点的 kube-proxy 传播。
+          # 这两件事并行发生，因此在传播完成前仍有新连接被路由到正在关闭的 Pod。
+          #
+          # 实测：不加它时删一个副本会产生 1 次非 200（演练第 4 项）。
+          # 这不是测试的问题，是部署配置的缺陷——真实发布同样会掉请求。
+          #
+          # sleep 期间容器仍然正常服务，只是不再被算作"新的"目标。
+          # 时长要大于传播延迟（kind 上约 1~2s），且小于 terminationGracePeriodSeconds。
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "8"]
+          # JVM 启动 + Flyway migration 可能要 40s 以上。
+          # startupProbe 的 failureThreshold 必须覆盖它，否则 liveness 会在
+          # 应用还没起来时就开始杀它。
+          startupProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            # readiness 用 readiness 组：它包含数据库连通性，
+            # 数据库断开时应当停止接流量。
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            # liveness 用 liveness 组：它**不含**外部依赖。
+            # 用 readiness 组做 liveness 会让一次数据库抖动导致全部副本被重启，
+            # 那是把可恢复的依赖故障放大成自身故障。
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-runtime
+  namespace: runbookguard
+spec:
+  selector:
+    app: agent-runtime
+  ports:
+    - port: 8100
+      targetPort: 8100
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-runtime
+  namespace: runbookguard
+  labels:
+    app: agent-runtime
+    tier: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: agent-runtime
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: agent-runtime
+        tier: app
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: agent-runtime
+      containers:
+        - name: agent-runtime
+          image: runbookguard/agent-runtime:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8100
+          envFrom:
+            - configMapRef: { name: runbookguard-config }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # preStop 的 sleep 是解决一个真实竞态的**唯一**办法：
+          # Pod 被删除时，kubelet 立刻发 SIGTERM，而 Endpoint 的摘除要经过
+          # apiserver → EndpointSlice controller → 每个节点的 kube-proxy 传播。
+          # 这两件事并行发生，因此在传播完成前仍有新连接被路由到正在关闭的 Pod。
+          #
+          # 实测：不加它时删一个副本会产生 1 次非 200（演练第 4 项）。
+          # 这不是测试的问题，是部署配置的缺陷——真实发布同样会掉请求。
+          #
+          # sleep 期间容器仍然正常服务，只是不再被算作"新的"目标。
+          # 时长要大于传播延迟（kind 上约 1~2s），且小于 terminationGracePeriodSeconds。
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "8"]
+          startupProbe:
+            httpGet: { path: /health, port: 8100 }
+            periodSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /health, port: 8100 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /health, port: 8100 }
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            # 内存上限刻意留出余量：检索若切到 hybrid 会加载 embedding 模型。
+            # 演练里有一个 case 专门把它压到会 OOMKilled 的水位。
+            limits: { cpu: "1", memory: 768Mi }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: console-nodeport
+  namespace: runbookguard
+spec:
+  type: NodePort
+  selector:
+    app: console
+  ports:
+    - port: 8081
+      targetPort: 8081
+      nodePort: 30081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+  namespace: runbookguard
+  labels:
+    app: console
+    tier: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: console
+  template:
+    metadata:
+      labels:
+        app: console
+        tier: web
+    spec:
+      containers:
+        - name: console
+          image: runbookguard/console:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            # 浏览器直连控制面，因此这个地址必须是**宿主机**可达的。
+            # 填 http://control-plane:8080 会让浏览器解析不到主机名。
+            - name: RUNBOOKGUARD_API_BASE
+              value: http://127.0.0.1:30080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet: { path: /index.html, port: 8081 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /index.html, port: 8081 }
+            periodSeconds: 20
+            failureThreshold: 5
+          resources:
+            requests: { cpu: 20m, memory: 32Mi }
+            limits: { cpu: 200m, memory: 128Mi }

@@ -1,0 +1,360 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-readiness-failure",
+  "case_id": "dev-readiness-failure",
+  "config_fingerprint": "5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441",
+  "recorded_at": "2026-08-29T13:46:29.102137+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 21,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 22,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 23,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 24,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 25,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 26,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 27,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 28,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 29,
+      "node": "SELECT_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 30,
+      "node": "POLICY_CHECK",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 31,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 32,
+      "node": "OBSERVE",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 33,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 34,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 35,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-17905681f798",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-search",
+      "content_hash": "17905681f798a533d733f682b41734233efed422e789c61cbf29f0d7252d2e6d",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-3d36c69ca538",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-search",
+      "content_hash": "3d36c69ca53887176671daa05e2cd2ccd6418763539d9bf8ff446f19b6829310",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-9e90383fd5d6",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-search",
+      "content_hash": "9e90383fd5d6a40d4f30be4487cd99519ed62a5a67d84296e3b906ca1ad9927b",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-e2d70f212b56",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-search",
+      "content_hash": "e2d70f212b567166575845b6ace0374262a1583eef892f94d1080777e0d73ba6",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-3d90d2e05639",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-search",
+      "content_hash": "3d90d2e05639d32ac2d43d3aeef7d3d80572562da393b2d3460e7d4e08e4b6bb",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-51cef264fe25",
+      "source_type": "get_recent_deployments",
+      "source_identity": "service:synthetic-search",
+      "content_hash": "51cef264fe25019a075830f34acc29db635038f7204d4dcf17cb179a80a67582",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "v4.2.0 made readiness require a fully loaded index, so pods never become ready",
+    "confidence": "high",
+    "root_cause_service": "synthetic-search",
+    "claims": [
+      {
+        "statement": "evidence ev-17905681f798 supports the stated cause",
+        "evidence_ids": [
+          "ev-17905681f798"
+        ]
+      },
+      {
+        "statement": "evidence ev-3d36c69ca538 supports the stated cause",
+        "evidence_ids": [
+          "ev-3d36c69ca538"
+        ]
+      },
+      {
+        "statement": "evidence ev-9e90383fd5d6 supports the stated cause",
+        "evidence_ids": [
+          "ev-9e90383fd5d6"
+        ]
+      }
+    ],
+    "ruled_out": [
+      {
+        "possibility": "the process is crashing",
+        "reason": "the corresponding signal did not change during the window",
+        "evidence_ids": [
+          "ev-17905681f798"
+        ]
+      }
+    ],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "9edd2fd8c819551b5ac54cf7c56e9f6417f4130c225c1a5061352e9a08602aed"
+}

@@ -1,0 +1,60 @@
+{
+  "$comment": "MCP 版本锁定 manifest。见 docs/adr/ADR-0007-mcp-version-and-boundary.md。所有版本号均为 2026-08-27 在已安装包上实测得到，非文档摘抄。",
+  "verified_at": "2026-08-27",
+  "sdk": {
+    "package": "mcp",
+    "version": "2.1.1",
+    "language": "python",
+    "latest_protocol_version": "2026-07-28",
+    "default_negotiated_version": "2025-03-26",
+    "$comment": "LATEST 与 DEFAULT_NEGOTIATED 不同：装了最新 SDK 不等于跑在最新协议上。不主动提升协商版本——提升需要验证行为差异，而那对本项目要证明的东西没有增量价值。",
+    "breaking_change_note": "mcp 2.x 移除了 mcp.server.fastmcp；FastMCP 更名为 MCPServer（mcp.server.mcpserver）。本项目使用 lowlevel mcp.server.Server，不受该更名影响。"
+  },
+  "specification": {
+    "revision_verified": "2026-07-28",
+    "source": "https://modelcontextprotocol.io/specification/",
+    "schema_path": "schema/2026-07-28/schema.ts"
+  },
+  "server": {
+    "name": "runbookguard-readonly-tools",
+    "implementation": "mcp.server.Server (lowlevel)",
+    "transport": "stdio",
+    "$comment": "用 lowlevel 而非装饰器 API：工具 Contract 的 11 项里有 principal/tenant/resource binding、风险等级、幂等键，这些不是函数签名能表达的，必须显式声明。",
+    "exposed_tools": [
+      "get_service_metrics",
+      "search_service_logs",
+      "get_recent_deployments",
+      "get_queue_state",
+      "retrieve_runbook_section"
+    ],
+    "excluded_tools": [
+      "restart_synthetic_service",
+      "rollback_synthetic_deployment",
+      "throttle_synthetic_traffic"
+    ],
+    "exclusion_reason": "动作工具需要审批 + 参数摘要绑定 + 隔离执行。多一条协议路径就多一处需要证明「审批没被绕过」的地方，而 MCP 在这里不提供任何增量——审批的权威在 Java Control Plane。"
+  },
+  "capabilities": {
+    "declared": ["tools"],
+    "not_declared": {
+      "resources": "第一版不通过 MCP 暴露资源",
+      "prompts": "Prompt 由 Agent Runtime 构造，不经 MCP",
+      "elicitation": "它让 Server 获得独立的向人提问通道。人机交互只有一条路径：Control Plane 的 Approval。",
+      "tasks_extension": "已有 Lease + Checkpoint + 幂等（ADR-0003）。再引入 durable handle 会出现两套恢复语义，「唯一终态」就有两个裁决点。"
+    }
+  },
+  "security": {
+    "transport_auth_replaces_business_rbac": false,
+    "$comment": "说明书 §15 的硬要求。MCP Server 进程不持有任何授权判定逻辑，它收到 tools/call 后交给与 direct 路径共用的同一个 PolicyEngine。",
+    "tenant_source": "derived_from_control_plane",
+    "tenant_from_request_params": "ignored",
+    "third_party_servers_trusted": false,
+    "third_party_note": "第一版不接任何第三方 Server。若未来接入，其 tool description 与 annotation 均视为不可信数据（规范页亦如此要求）。"
+  },
+  "transports": {
+    "primary": "direct",
+    "primary_reason": "MCP 引入子进程与 JSON-RPC 往返，会给 M6 的可复现性增加不受控变量。评测与 CI 走 direct。",
+    "secondary": "mcp",
+    "secondary_reason": "证明协议兼容性；两条路径必须通过同一份契约测试，返回同构结果。"
+  }
+}

@@ -1,0 +1,439 @@
+openapi: 3.1.0
+info:
+  title: RunbookGuard Synthetic Lab API
+  version: 0.1.0
+  description: |
+    确定性故障数据源。它是只读工具的数据来源（M0 §7），也是**不可信数据源的模拟器**：
+    注入载荷原样返回，处理责任在 Agent Runtime 侧（威胁 T-1 的缓解落在 M4）。
+
+    两个必须理解的语义：
+
+    1. **数据按查询窗口即时计算，不随真实时间累积**（ADR-0004 §2）。剧本启动后立刻查询
+       T0+5min 的数据会得到完整的故障期数据，不需要真的等 5 分钟。
+    2. **所有随机性由剧本 seed 决定**。同一剧本、同一窗口 → 时间戳归一化后逐字节相同。
+
+    这不是一个真实的性能压力环境。真实资源压力（OOMKilled 的实际发生、CPU throttling）
+    在 M8 用 Kubernetes 演练；本服务只提供「事件已发生」的可查询记录。
+
+servers:
+  - url: http://127.0.0.1:8090
+    description: 本地 Docker Compose
+
+tags:
+  - name: scenarios
+  - name: queries
+
+paths:
+  /health:
+    get:
+      summary: 健康检查
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  scenarios: { type: integer, description: 已加载的剧本数 }
+                  active: { type: integer, description: 当前激活的剧本数 }
+
+  /v1/scenarios:
+    get:
+      tags: [scenarios]
+      summary: 列出所有剧本
+      description: fingerprint 是剧本定义的摘要，冻结评测时用它证明「用的是这一版剧本」。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenarios:
+                    type: array
+                    items: { $ref: '#/components/schemas/ScenarioSummary' }
+
+  /v1/scenarios/active:
+    get:
+      tags: [scenarios]
+      summary: 当前激活的剧本
+      responses:
+        '200':
+          description: OK
+
+  /v1/scenarios/{scenarioId}/start:
+    post:
+      tags: [scenarios]
+      summary: 启动剧本，记录 T0
+      description: |
+        T0 对齐到整分钟。若带秒数，查询窗口两端会切在分钟中间，落在切口外的日志行
+        被丢弃，启动时刻的秒数就渗进了输出——同一剧本连续跑三次会得到不同结果。
+
+        同一服务同时被两个剧本作用会被拒绝（409）：混合特征没有唯一正确答案，
+        无法作为评测输入。
+      parameters:
+        - { name: scenarioId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: 已启动
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [scenario_id, fingerprint, t0, window]
+                properties:
+                  scenario_id: { type: string }
+                  fingerprint: { type: string, pattern: '^[0-9a-f]{64}$' }
+                  t0: { type: string, format: date-time }
+                  window:
+                    type: object
+                    properties:
+                      start: { type: string, format: date-time }
+                      end: { type: string, format: date-time }
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 剧本已在运行，或目标服务已被其它剧本占用
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabError' }
+
+  /v1/scenarios/stop:
+    post:
+      tags: [scenarios]
+      summary: 停止所有剧本
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stopped: { type: integer }
+
+  /v1/scenarios/{scenarioId}/snapshot:
+    get:
+      tags: [scenarios]
+      summary: 剧本全量数据快照 + 关键判据
+      description: |
+        稳定性校验需要一次拿到全部信号；逐个端点查询会因顺序不同而难以比对。
+
+        `alignment` 由本服务计算而非由测试重算，使「错误率跃升与部署对齐」这类断言
+        有唯一口径。
+      parameters:
+        - { name: scenarioId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Snapshot' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: 剧本未启动
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabError' }
+
+  /v1/metrics:
+    get:
+      tags: [queries]
+      summary: 指标时序（对应只读工具 get_service_metrics）
+      parameters:
+        - { name: service, in: query, required: true, schema: { type: string } }
+        - { name: metric, in: query, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/WindowMinutes'
+        - $ref: '#/components/parameters/OffsetMinutes'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, metric, coverage, points]
+                properties:
+                  service: { type: string }
+                  metric: { type: string }
+                  unit: { type: string }
+                  scenario_id:
+                    type: [string, 'null']
+                    description: null 表示基线模式（未启动剧本）
+                  coverage: { $ref: '#/components/schemas/Coverage' }
+                  points:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp: { type: string, format: date-time }
+                        value: { type: number }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/InvalidParameters' }
+
+  /v1/logs:
+    get:
+      tags: [queries]
+      summary: 应用日志（对应只读工具 search_service_logs）
+      description: |
+        `injected=true` 标记注入载荷所在的行，便于 grader 定位诱导来源。
+        **注入文本不做任何过滤或转义**——过滤会让 M6 的注入测试变成自欺。
+      parameters:
+        - { name: service, in: query, required: true, schema: { type: string } }
+        - { name: query, in: query, schema: { type: string }, description: 消息体子串匹配（大小写不敏感） }
+        - $ref: '#/components/parameters/WindowMinutes'
+        - $ref: '#/components/parameters/OffsetMinutes'
+        - { name: limit, in: query, schema: { type: integer, default: 200, minimum: 1, maximum: 2000 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, coverage, entries]
+                properties:
+                  service: { type: string }
+                  scenario_id: { type: [string, 'null'] }
+                  coverage: { $ref: '#/components/schemas/Coverage' }
+                  entries:
+                    type: array
+                    items: { $ref: '#/components/schemas/LogEntry' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/InvalidParameters' }
+
+  /v1/deployments:
+    get:
+      tags: [queries]
+      summary: 部署记录（对应只读工具 get_recent_deployments）
+      description: |
+        **只暴露变更的配置键名，不暴露值**：配置值可能是凭据（威胁 T-3）。
+        M0 场景 S3 的必需证据是「auth.audience 发生了变更」，键名足够。
+      parameters:
+        - { name: service, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service: { type: string }
+                  scenario_id: { type: [string, 'null'] }
+                  deployments:
+                    type: array
+                    items: { $ref: '#/components/schemas/Deployment' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/queues:
+    get:
+      tags: [queries]
+      summary: 队列状态（对应只读工具 get_queue_state）
+      parameters:
+        - { name: queue, in: query, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/WindowMinutes'
+        - $ref: '#/components/parameters/OffsetMinutes'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queue: { type: string }
+                  consumer_count: { type: integer }
+                  scenario_id: { type: [string, 'null'] }
+                  coverage: { $ref: '#/components/schemas/Coverage' }
+                  points:
+                    type: array
+                    items: { $ref: '#/components/schemas/QueuePoint' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/InvalidParameters' }
+
+  /v1/runtime-events:
+    get:
+      tags: [queries]
+      summary: 容器/运行时事件
+      description: |
+        ADR-0001 C-5 新增的第五类接口。DEV_PROMPT §12 原列 4 类（指标/日志/部署/队列），
+        但 OOMKilled 的必需证据（重启计数、OOM 事件）不属于任何一类，不补齐则
+        M0 场景 S4 无法成立。
+
+        是否新增第 6 个只读工具 `get_runtime_events` 留待 M4 决定；本服务只提供数据面。
+
+        `restart_count` 是累计值，随时间单调递增。
+      parameters:
+        - { name: service, in: query, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/WindowMinutes'
+        - $ref: '#/components/parameters/OffsetMinutes'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service: { type: string }
+                  scenario_id: { type: [string, 'null'] }
+                  coverage: { $ref: '#/components/schemas/Coverage' }
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/RuntimeEvent' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/InvalidParameters' }
+
+components:
+  parameters:
+    WindowMinutes:
+      name: window_minutes
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 1440 }
+      description: 查询跨度。省略时返回剧本的完整覆盖窗口。
+    OffsetMinutes:
+      name: offset_minutes
+      in: query
+      required: false
+      schema: { type: integer, minimum: -1440, maximum: 1440 }
+      description: |
+        相对 T0 的查询起点，负数表示 T0 之前。省略时从覆盖窗口起点开始。
+        超出剧本覆盖范围时返回空数组 + coverage=outside_scenario_window，**不插值**。
+
+  responses:
+    NotFound:
+      description: 未知剧本 / 服务 / 指标 / 队列
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/LabError' }
+    InvalidParameters:
+      description: 参数非法。一律拒绝，不静默使用默认值。
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/LabError' }
+
+  schemas:
+    LabError:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          enum:
+            - scenario_not_found
+            - scenario_not_active
+            - scenario_already_active
+            - service_already_under_scenario
+            - unknown_service
+            - unknown_metric
+            - unknown_queue
+            - invalid_parameters
+        message: { type: string }
+
+    Coverage:
+      type: string
+      enum: [covered, outside_scenario_window]
+
+    ScenarioSummary:
+      type: object
+      required: [id, version, seed, fingerprint]
+      properties:
+        id: { type: string }
+        version: { type: integer }
+        description: { type: string }
+        seed:
+          type: integer
+          description: 决定所有伪随机抖动。同一 seed → 逐字节相同的输出。
+        fingerprint:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: 剧本定义的摘要，用于冻结评测时证明版本。
+        services: { type: array, items: { type: string } }
+        queues: { type: array, items: { type: string } }
+        baseline_minutes: { type: integer }
+        incident_minutes: { type: integer }
+
+    LogEntry:
+      type: object
+      required: [timestamp, level, service, message, injected]
+      properties:
+        timestamp: { type: string, format: date-time }
+        level: { type: string, enum: [DEBUG, INFO, WARN, ERROR] }
+        service: { type: string }
+        message:
+          type: string
+          description: 原样输出，含注入载荷。**不可信数据**。
+        injected:
+          type: boolean
+          description: true 表示这一行是剧本声明的注入载荷。
+
+    Deployment:
+      type: object
+      required: [service, version, previous_version, deployed_at, changed_config_keys]
+      properties:
+        service: { type: string }
+        version: { type: string }
+        previous_version: { type: string }
+        deployed_at: { type: string, format: date-time }
+        changed_config_keys:
+          type: array
+          items: { type: string }
+          description: 只有键名。值可能是凭据，不暴露。
+        is_decoy:
+          type: boolean
+          description: |
+            true 表示这次部署与故障根因无关，用于检验 Agent 是否误归因
+            （M0 场景 S2 的诱饵）。**评测时 grader 可见，Agent 不可见**。
+
+    QueuePoint:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        depth: { type: integer }
+        oldest_age_seconds: { type: number }
+        publish_rate: { type: number }
+        deliver_rate: { type: number }
+
+    RuntimeEvent:
+      type: object
+      required: [service, event_type, timestamp, restart_count]
+      properties:
+        service: { type: string }
+        event_type: { type: string, examples: [OOMKilled, ContainerStarted] }
+        timestamp: { type: string, format: date-time }
+        restart_count: { type: integer, description: 累计值，单调递增 }
+        exit_code: { type: [integer, 'null'], examples: [137] }
+        reason: { type: string }
+
+    Snapshot:
+      type: object
+      required: [scenario_id, fingerprint, t0, services, queues, alignment]
+      properties:
+        scenario_id: { type: string }
+        fingerprint: { type: string }
+        t0: { type: string, format: date-time }
+        services:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              metrics: { type: object }
+              logs: { type: array, items: { $ref: '#/components/schemas/LogEntry' } }
+              deployments: { type: array, items: { $ref: '#/components/schemas/Deployment' } }
+              runtime_events: { type: array, items: { $ref: '#/components/schemas/RuntimeEvent' } }
+        queues: { type: object }
+        alignment:
+          type: object
+          description: 关键判据。由服务端计算，使断言有唯一口径。
+          properties:
+            error_rate_jump_matches_deployment:
+              type: boolean
+              description: S3 的核心论据：错误率跃升与部署时刻对齐。
+            oom_events_align_with_memory_peaks:
+              type: boolean
+              description: S4 的核心论据：OOM 事件与内存触顶对齐。

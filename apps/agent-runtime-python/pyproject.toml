@@ -1,0 +1,52 @@
+[project]
+name = "runbookguard-agent-runtime"
+version = "0.1.0"
+description = "Agent Runtime：Provider Adapter、结构化输出、LangGraph 编排、检索与评测"
+requires-python = ">=3.12"
+# 版本全部锁到确切值。理由不是保守，而是 M6 要冻结「tool versions」——
+# 范围依赖会让「用哪一版跑出的评测数字」说不清楚。
+dependencies = [
+    # mcp 2.1.1 依赖 starlette 1.x，而 fastapi < 0.141 只兼容 starlette 0.x。
+    # 两者同装时 TestClient 会在 Router.__init__ 上炸（on_startup 参数被移除）。
+    "fastapi==0.141.1",
+    "uvicorn[standard]==0.34.0",
+    "pydantic==2.13.4",
+    "httpx==0.28.1",
+    "langgraph==1.2.11",
+    "langgraph-checkpoint-sqlite==3.1.1",
+    # 2.x 是破坏性版本：FastMCP 更名为 MCPServer。见 ADR-0007。
+    "mcp==2.1.1",
+    # Qdrant 客户端与服务端必须同 major、minor 差不超过 1，否则客户端会警告
+    # 且新 API 可能在旧服务端上行为不同。compose 里钉的是 qdrant/qdrant:v1.16.1。
+    "qdrant-client==1.16.1",
+    "fastembed==0.8.0",
+    "rank-bm25==0.2.2",
+    # 观测。opentelemetry 的 API/SDK/exporter 三者版本必须一致，
+    # 不一致时症状是运行时找不到 provider 而非导入失败。
+    "prometheus-client==0.21.1",
+    "opentelemetry-api==1.29.0",
+    "opentelemetry-sdk==1.29.0",
+    "opentelemetry-exporter-otlp-proto-http==1.29.0",
+    "opentelemetry-instrumentation-fastapi==0.50b0",
+    "opentelemetry-instrumentation-httpx==0.50b0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.25.2",
+    "respx==0.22.0",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

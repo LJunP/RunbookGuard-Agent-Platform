@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RunbookGuard 控制台</title>
+    <script>
+      // 运行时注入，不在构建期烧进 bundle。compose 里的 nginx 会用同一份产物，
+      // 只替换这一行就能指向不同的控制面。
+      window.__RUNBOOKGUARD_API_BASE__ = "http://127.0.0.1:8080";
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

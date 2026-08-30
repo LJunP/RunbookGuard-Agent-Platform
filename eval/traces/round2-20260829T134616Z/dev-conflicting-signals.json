@@ -1,0 +1,206 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-conflicting-signals",
+  "case_id": "dev-conflicting-signals",
+  "config_fingerprint": "5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441",
+  "recorded_at": "2026-08-29T13:46:29.436887+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "COMPLETE",
+      "detail": "conflicting_evidence",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-9cc9b5ead702",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-payments",
+      "content_hash": "9cc9b5ead70201b59d52ff8c715c6554bd3fa2e67b72185fe97768f5d9d29450",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-0db500ddfad3",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-payments",
+      "content_hash": "0db500ddfad3923026f347efd769db67d67fb96192324595b5e1c4244067b1b9",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-6515049ab4de",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-payments",
+      "content_hash": "6515049ab4de4cee81aa1f646e65854e5a1b99296b1384f2464ab4edd18d5846",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "conflicting_evidence",
+    "root_cause": "sources disagree; no single cause can be established",
+    "confidence": "none",
+    "root_cause_service": null,
+    "claims": [],
+    "ruled_out": [],
+    "conflicting_signals": [
+      {
+        "left_evidence_id": "ev-9cc9b5ead702",
+        "right_evidence_id": "ev-6515049ab4de",
+        "explanation": "one source reports the service as healthy while the other reports sustained failures over the same window"
+      }
+    ],
+    "missing_evidence": [
+      "an independent source that can adjudicate between the two"
+    ],
+    "proposed_action": null,
+    "recommended_next_step": "verify which source is stale before acting",
+    "unwrapped": false
+  },
+  "digest": "3b09d35c9a4f38264e3993dd3ea1a74f1b91767cbc379467a489342eba96542b"
+}

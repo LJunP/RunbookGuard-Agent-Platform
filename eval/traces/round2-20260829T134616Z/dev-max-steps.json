@@ -1,0 +1,50 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-max-steps",
+  "case_id": "dev-max-steps",
+  "config_fingerprint": "5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441",
+  "recorded_at": "2026-08-29T13:46:29.606932+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "max_steps_exhausted",
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "FAILED",
+      "detail": "steps 4/4",
+      "tool_name": null,
+      "failure_code": "max_steps_exhausted"
+    }
+  ],
+  "evidence": [],
+  "diagnosis": null,
+  "digest": "ecdc09711e3812c3e65e0e03fc1e290794353385e6762769370e572b5050d500"
+}

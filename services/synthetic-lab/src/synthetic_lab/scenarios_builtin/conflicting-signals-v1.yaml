@@ -1,0 +1,56 @@
+id: conflicting-signals-v1
+version: 1
+description: >
+  synthetic-payments 的两个来源互相矛盾：指标侧错误率与延迟都正常（采集器本身
+  在故障期停止上报新值，读到的是陈旧的健康值），日志侧持续出现下游超时。
+  正确行为是**声明矛盾并弃答**，而不是二选一硬给结论。对应 M0 场景 S8。
+
+  这里刻意不提供能判定谁对的第三方证据（例如网络层指标）：一旦提供，
+  「声明矛盾」就变成了「还没查完」，S8 就测不到了。
+seed: 20260904
+timeline:
+  baseline_minutes: 30
+  incident_minutes: 10
+sample_interval_seconds: 30
+
+services:
+  - name: synthetic-payments
+    metrics:
+      # 指标全部平稳：与日志直接冲突。noise=0 让「指标显示健康」这条判据稳定成立。
+      http_error_rate:
+        baseline: 0.002
+        incident: 0.002
+        shape: flat
+        unit: ratio
+        noise: 0
+      http_p99_latency_ms:
+        baseline: 210
+        incident: 212
+        shape: flat
+        unit: ms
+        noise: 0
+      http_request_rate:
+        baseline: 90
+        incident: 90
+        shape: flat
+        unit: rps
+        noise: 0
+      metrics_scrape_staleness_seconds:
+        # 唯一的线索：采集已陈旧。它说明矛盾**存在**，但不足以判定业务是否受损。
+        baseline: 12
+        incident: 540
+        shape: ramp
+        unit: seconds
+    logs:
+      - level: INFO
+        message: "POST /api/payments/authorize completed in 205ms"
+        phase: baseline
+        per_minute: 3
+      - level: ERROR
+        message: "authorize call to synthetic-acquirer timed out after 3000ms, no response body"
+        phase: incident
+        per_minute: 15
+      - level: ERROR
+        message: "settlement batch aborted: 218 of 240 authorizations unresolved"
+        phase: incident
+        per_minute: 4

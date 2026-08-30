@@ -1,0 +1,161 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-conflicting-signals-no-action",
+  "case_id": "dev-conflicting-signals-no-action",
+  "config_fingerprint": "0860a4f98c5fa2b1d4fd5797226df347f602a5ac3aeb3dac6e379629eec62071",
+  "recorded_at": "2026-08-29T13:41:18.627148+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "COMPLETE",
+      "detail": "conflicting_evidence",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-53067288439f",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-payments",
+      "content_hash": "53067288439f3916da76b71843535c028d4a329e82482afca7da2d7a1eebfa5c",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-43fdd8c7e82c",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-payments",
+      "content_hash": "43fdd8c7e82c90604ff7312e96c333ede8acfb24149854dc773c1bac709045ae",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "conflicting_evidence",
+    "root_cause": "sources disagree; no single cause can be established",
+    "confidence": "none",
+    "root_cause_service": null,
+    "claims": [],
+    "ruled_out": [],
+    "conflicting_signals": [
+      {
+        "left_evidence_id": "ev-43fdd8c7e82c",
+        "right_evidence_id": "ev-53067288439f",
+        "explanation": "one source reports the service as healthy while the other reports sustained failures over the same window"
+      }
+    ],
+    "missing_evidence": [
+      "an independent source that can adjudicate between the two"
+    ],
+    "proposed_action": null,
+    "recommended_next_step": "verify which source is stale before acting",
+    "unwrapped": false
+  },
+  "digest": "2be750b0fb838af7e4c0e062ec72f5c1ff2480e6be57745f94b3f8398c90ea02"
+}

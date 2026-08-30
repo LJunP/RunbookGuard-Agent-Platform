@@ -1,0 +1,227 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rg-mysql
+    # 审计不可篡改的触发器在 binlog 开启时需要这个开关，否则 Flyway V2 会因 ERROR 1419 失败。
+    command:
+      - --log-bin-trust-function-creators=1
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_DATABASE: runbookguard
+      MYSQL_USER: runbookguard
+      # 本地开发凭据，不用于任何真实环境。生产部署必须用环境变量或 Secret 注入。
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-local-dev-only}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-local-dev-root}
+    ports:
+      # 默认 3307/6380 而非 3306/6379：开发机上常已有本地 MySQL/Redis 占用标准端口，
+      # 撞端口时 compose 会直接起不来。控制面走 compose 网络，不受这里影响。
+      - "${MYSQL_PORT:-3307}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-local-dev-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: rg-redis
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rg-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-runbookguard}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-local-dev-only}
+    ports:
+      - "${RABBITMQ_PORT:-5673}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15673}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  control-plane:
+    build:
+      context: ../../apps/control-plane-java
+      dockerfile: Dockerfile
+    container_name: rg-control-plane
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: runbookguard
+      MYSQL_USER: runbookguard
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-local-dev-only}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-runbookguard}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-local-dev-only}
+      CONTROL_PLANE_PORT: 8080
+      RUNBOOKGUARD_SEED_DEV_DATA: "true"
+      # 控制台是独立源，必须显式放行。默认覆盖 compose 的 nginx 与本地 Vite。
+      CONSOLE_ALLOWED_ORIGINS: ${CONSOLE_ALLOWED_ORIGINS:-http://127.0.0.1:8081,http://localhost:8081,http://127.0.0.1:5173,http://localhost:5173}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+      MANAGEMENT_TRACING_ENABLED: ${MANAGEMENT_TRACING_ENABLED:-true}
+    ports:
+      - "${CONTROL_PLANE_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  synthetic-lab:
+    build:
+      context: ../../services/synthetic-lab
+      dockerfile: Dockerfile
+    container_name: rg-synthetic-lab
+    ports:
+      - "${SYNTHETIC_LAB_PORT:-8090}:8090"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8090/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  agent-runtime:
+    build:
+      context: ../../apps/agent-runtime-python
+      dockerfile: Dockerfile
+    container_name: rg-agent-runtime
+    depends_on:
+      synthetic-lab:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    environment:
+      # fake 是默认：容器启动不会产生任何真实 API 调用，也不需要凭据。
+      # 要用真实 Provider，改成 openai-compatible 并通过环境注入 base URL / model / key。
+      RUNBOOKGUARD_LLM_PROVIDER: ${RUNBOOKGUARD_LLM_PROVIDER:-fake}
+      RUNBOOKGUARD_LLM_BASE_URL: ${RUNBOOKGUARD_LLM_BASE_URL:-}
+      RUNBOOKGUARD_LLM_MODEL: ${RUNBOOKGUARD_LLM_MODEL:-}
+      RUNBOOKGUARD_LLM_API_KEY: ${RUNBOOKGUARD_LLM_API_KEY:-}
+      RUNBOOKGUARD_LLM_MAX_CALLS: ${RUNBOOKGUARD_LLM_MAX_CALLS:-20}
+      SYNTHETIC_LAB_URL: http://synthetic-lab:8090
+      # trace 默认开启（compose 里有 collector）。单跑 agent-runtime 时关掉它，
+      # 否则导出器会周期性重试并刷日志。
+      RUNBOOKGUARD_OTEL_ENABLED: ${RUNBOOKGUARD_OTEL_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    ports:
+      - "${AGENT_RUNTIME_PORT:-8100}:8100"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8100/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  qdrant:
+    image: qdrant/qdrant:v1.16.1
+    container_name: rg-qdrant
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    healthcheck:
+      # Qdrant 的镜像没有 curl/wget，用它自带的健康端点 + bash 的 /dev/tcp 探测。
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+  console:
+    build:
+      context: ../../apps/console-web
+      dockerfile: Dockerfile
+    container_name: rg-console
+    depends_on:
+      control-plane:
+        condition: service_healthy
+    environment:
+      # 浏览器直连控制面，因此这个地址必须是**宿主机**可达的，不是 compose 内部名。
+      # 填 http://control-plane:8080 会让浏览器解析不到主机名。
+      RUNBOOKGUARD_API_BASE: ${RUNBOOKGUARD_API_BASE:-http://127.0.0.1:8080}
+    ports:
+      - "${CONSOLE_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/index.html >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    container_name: rg-otel-collector
+    command: ["--config=/etc/otel/collector-config.yaml"]
+    volumes:
+      - ../../observability/otel/collector-config.yaml:/etc/otel/collector-config.yaml:ro
+    ports:
+      - "${OTLP_HTTP_PORT:-4318}:4318"
+      - "${OTLP_GRPC_PORT:-4317}:4317"
+      # collector 自身指标，供 Prometheus 抓取以回答「trace 有没有送出去」。
+      - "${OTEL_METRICS_PORT:-8889}:8889"
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: rg-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=6h
+      # 演示环境保留 6 小时就够。不设上限时一次长时间运行会把磁盘吃满，
+      # 而磁盘满会让 MySQL 也写不进去——observability 拖垮被观测的系统。
+    volumes:
+      - ../../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    container_name: rg-grafana
+    depends_on:
+      - prometheus
+    environment:
+      # 本地演示：匿名只读访问，免去登录步骤。这是**本地专用**配置，
+      # 任何可被外部访问的部署都必须关掉它。
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-local-dev-only}
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ../../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+
+volumes:
+  mysql-data:
+  qdrant-data:
+  prometheus-data:
+  grafana-data:

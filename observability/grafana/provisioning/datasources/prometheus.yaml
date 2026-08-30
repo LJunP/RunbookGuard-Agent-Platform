@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      # 与 prometheus.yml 的 scrape_interval 一致。不一致时 Grafana 会按错误的
+      # 步长插值，rate() 在窗口小于两个采样间隔时返回空，面板看起来像没数据。
+      timeInterval: 15s

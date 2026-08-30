@@ -1,0 +1,22 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-deadline",
+  "case_id": "dev-deadline",
+  "config_fingerprint": "5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441",
+  "recorded_at": "2026-08-29T13:46:29.578590+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "deadline_exceeded",
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "FAILED",
+      "detail": "deadline 2026-08-29T13:46:28.578527+00:00 reached at 2026-08-29T13:46:29.578556+00:00",
+      "tool_name": null,
+      "failure_code": "deadline_exceeded"
+    }
+  ],
+  "evidence": [],
+  "diagnosis": null,
+  "digest": "643a7a92d0a5e3fc449c4ac043bdc9e0b1d9ed0ac1660518e15bf42c5123e887"
+}

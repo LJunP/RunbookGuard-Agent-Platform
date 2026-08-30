@@ -1,0 +1,36 @@
+[project]
+name = "runbookguard-synthetic-lab"
+version = "0.1.0"
+description = "确定性故障数据源，供只读工具与评测使用"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "pydantic==2.10.4",
+    "pyyaml==6.0.2",
+    # 只要 Prometheus 端点，不接 trace：lab 是被观测的对象（故障数据源），
+    # 不是需要被追踪的业务链路。多装一套 SDK 只是增加它自己出错的可能。
+    "prometheus-client==0.21.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "httpx==0.28.1",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# 剧本 YAML 必须随包安装。缺了这段，本地跑（PYTHONPATH=src）一切正常，
+# 打进镜像后启动即失败——剧本目录是空的。
+[tool.setuptools.package-data]
+synthetic_lab = ["scenarios_builtin/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

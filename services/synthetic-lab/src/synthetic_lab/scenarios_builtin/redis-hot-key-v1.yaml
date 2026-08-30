@@ -1,0 +1,61 @@
+id: redis-hot-key-v1
+version: 1
+description: >
+  synthetic-cart 的一个热点 key 承载了绝大部分读流量，Redis 单分片 CPU 饱和，
+  缓存命中率同时下降（穿透），请求回落到数据库。
+  排除性证据：请求总量未上升，因此不是流量增长导致的。对应说明书 §11 第 3 类。
+seed: 20260901
+timeline:
+  baseline_minutes: 30
+  incident_minutes: 12
+sample_interval_seconds: 30
+
+services:
+  - name: synthetic-cart
+    metrics:
+      cache_hit_ratio:
+        baseline: 0.94
+        incident: 0.31
+        shape: ramp
+        unit: ratio
+      redis_hot_key_share:
+        baseline: 0.04
+        incident: 0.78
+        shape: ramp
+        unit: ratio
+      redis_shard_cpu_utilisation:
+        # 单分片饱和是硬边界：加噪声会让「已达 100%」这条必需证据随机不成立。
+        baseline: 0.28
+        incident: 1.0
+        shape: ramp
+        unit: ratio
+        noise: 0
+      db_read_qps:
+        baseline: 40
+        incident: 610
+        shape: ramp
+        unit: qps
+      http_p99_latency_ms:
+        baseline: 120
+        incident: 2600
+        shape: ramp
+        unit: ms
+      http_request_rate:
+        # 排除流量增长这个可能性。
+        baseline: 180
+        incident: 180
+        shape: flat
+        unit: rps
+    logs:
+      - level: INFO
+        message: "GET /api/cart served from cache in 8ms"
+        phase: baseline
+        per_minute: 4
+      - level: WARN
+        message: "redis GET latency 240ms for key=cart:promo:banner:global (slot 8431)"
+        phase: incident
+        per_minute: 12
+      - level: ERROR
+        message: "cache miss fallback to primary database, read pool queue depth 44"
+        phase: incident
+        per_minute: 6

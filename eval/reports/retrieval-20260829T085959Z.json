@@ -1,0 +1,137 @@
+{
+  "ran_at": "2026-08-29T08:59:33.853581+00:00",
+  "corpus": {
+    "runbooks": 36,
+    "chunks": 216
+  },
+  "queries": {
+    "diagnostic": 33,
+    "remedial": 5,
+    "expected_miss": 4
+  },
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "baseline_lexical": {
+    "k=3": {
+      "queries": 42,
+      "k": 3,
+      "recall_at_k": 0.8158,
+      "mrr_at_k": 0.9298,
+      "hit_queries": 36,
+      "miss_queries": 2,
+      "correct_abstention_rate": 1.0
+    },
+    "k=5": {
+      "queries": 42,
+      "k": 5,
+      "recall_at_k": 0.8553,
+      "mrr_at_k": 0.9351,
+      "hit_queries": 37,
+      "miss_queries": 1,
+      "correct_abstention_rate": 1.0
+    },
+    "k=10": {
+      "queries": 42,
+      "k": 10,
+      "recall_at_k": 0.8553,
+      "mrr_at_k": 0.9351,
+      "hit_queries": 37,
+      "miss_queries": 1,
+      "correct_abstention_rate": 1.0
+    }
+  },
+  "vector_only": {
+    "k=3": {
+      "queries": 42,
+      "k": 3,
+      "recall_at_k": 0.0,
+      "mrr_at_k": 0.0,
+      "hit_queries": 0,
+      "miss_queries": 38,
+      "correct_abstention_rate": 1.0
+    },
+    "k=5": {
+      "queries": 42,
+      "k": 5,
+      "recall_at_k": 0.0,
+      "mrr_at_k": 0.0,
+      "hit_queries": 0,
+      "miss_queries": 38,
+      "correct_abstention_rate": 1.0
+    },
+    "k=10": {
+      "queries": 42,
+      "k": 10,
+      "recall_at_k": 0.0,
+      "mrr_at_k": 0.0,
+      "hit_queries": 0,
+      "miss_queries": 38,
+      "correct_abstention_rate": 1.0
+    }
+  },
+  "hybrid": {
+    "k=3": {
+      "queries": 42,
+      "k": 3,
+      "recall_at_k": 0.0,
+      "mrr_at_k": 0.0,
+      "hit_queries": 0,
+      "miss_queries": 38,
+      "correct_abstention_rate": 1.0
+    },
+    "k=5": {
+      "queries": 42,
+      "k": 5,
+      "recall_at_k": 0.0,
+      "mrr_at_k": 0.0,
+      "hit_queries": 0,
+      "miss_queries": 38,
+      "correct_abstention_rate": 1.0
+    },
+    "k=10": {
+      "queries": 42,
+      "k": 10,
+      "recall_at_k": 0.0,
+      "mrr_at_k": 0.0,
+      "hit_queries": 0,
+      "miss_queries": 38,
+      "correct_abstention_rate": 1.0
+    }
+  },
+  "hybrid_vs_baseline": {
+    "k=3": {
+      "recall_at_k_delta": -0.8158,
+      "mrr_at_k_delta": -0.9298,
+      "hit_queries_delta": -36
+    },
+    "k=5": {
+      "recall_at_k_delta": -0.8553,
+      "mrr_at_k_delta": -0.9351,
+      "hit_queries_delta": -37
+    },
+    "k=10": {
+      "recall_at_k_delta": -0.8553,
+      "mrr_at_k_delta": -0.9351,
+      "hit_queries_delta": -37
+    }
+  },
+  "remedial_only": {
+    "baseline": {
+      "queries": 5,
+      "k": 5,
+      "recall_at_k": 0.4,
+      "mrr_at_k": 0.5067,
+      "hit_queries": 4,
+      "miss_queries": 1,
+      "correct_abstention_rate": 1.0
+    },
+    "hybrid": {
+      "queries": 5,
+      "k": 5,
+      "recall_at_k": 0.0,
+      "mrr_at_k": 0.0,
+      "hit_queries": 0,
+      "miss_queries": 5,
+      "correct_abstention_rate": 1.0
+    }
+  }
+}

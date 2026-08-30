@@ -1,0 +1,222 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-pool-exhaustion-propose-rollback",
+  "case_id": "dev-pool-exhaustion-propose-rollback",
+  "config_fingerprint": "0860a4f98c5fa2b1d4fd5797226df347f602a5ac3aeb3dac6e379629eec62071",
+  "recorded_at": "2026-08-29T13:41:18.033716+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-28d8d144df6e",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "28d8d144df6e4be425866c9330cada72e8855054b258c91ba00932ac5f9ff04f",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-1fe75cb547ed",
+      "source_type": "get_recent_deployments",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "1fe75cb547edf46863a414300699fd3c26cad6c8b55fce31b504623f86175a69",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-2dc85227bd81",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-db-pool-exhaustion#symptom",
+      "content_hash": "2dc85227bd81de112279d3ea38f9c9f8e02503e9a82b9866f17b6f842622078a",
+      "untrusted": true,
+      "document_id": "rb-db-pool-exhaustion",
+      "document_version": "1.2.0",
+      "section_id": "rb-db-pool-exhaustion#symptom"
+    },
+    {
+      "evidence_id": "ev-f5bdb4a15158",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-db-pool-exhaustion#diagnosis",
+      "content_hash": "f5bdb4a151585ed6380b1fb6228162f2f9a94b4f088a481723c73cebc47e0434",
+      "untrusted": true,
+      "document_id": "rb-db-pool-exhaustion",
+      "document_version": "1.2.0",
+      "section_id": "rb-db-pool-exhaustion#diagnosis"
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "v1.5.0 introduced a connection leak; rolling back restores the pool",
+    "confidence": "high",
+    "root_cause_service": "synthetic-orders",
+    "claims": [
+      {
+        "statement": "evidence ev-28d8d144df6e supports the stated cause",
+        "evidence_ids": [
+          "ev-28d8d144df6e"
+        ]
+      }
+    ],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": {
+      "tool_name": "rollback_synthetic_deployment",
+      "arguments": {
+        "service": "synthetic-orders",
+        "target_version": "v1.4.2"
+      },
+      "justification": "the runbook lists this as the safe action for this symptom"
+    },
+    "recommended_next_step": "apply the runbook safe action after approval",
+    "unwrapped": false
+  },
+  "digest": "2e2232914f10bce212bd6ff490bd3d12a5c9c1f52e86cae563fcd785c1fd288a"
+}

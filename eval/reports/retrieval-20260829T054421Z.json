@@ -1,0 +1,42 @@
+{
+  "ran_at": "2026-08-29T05:44:21.684083+00:00",
+  "corpus": {
+    "runbooks": 36,
+    "chunks": 216
+  },
+  "queries": {
+    "diagnostic": 33,
+    "remedial": 5,
+    "expected_miss": 4
+  },
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "baseline_lexical": {
+    "k=3": {
+      "queries": 42,
+      "k": 3,
+      "recall_at_k": 0.8026,
+      "mrr_at_k": 0.9298,
+      "hit_queries": 36,
+      "miss_queries": 2,
+      "correct_abstention_rate": 0.25
+    },
+    "k=5": {
+      "queries": 42,
+      "k": 5,
+      "recall_at_k": 0.9211,
+      "mrr_at_k": 0.9404,
+      "hit_queries": 38,
+      "miss_queries": 0,
+      "correct_abstention_rate": 0.25
+    },
+    "k=10": {
+      "queries": 42,
+      "k": 10,
+      "recall_at_k": 0.9474,
+      "mrr_at_k": 0.9404,
+      "hit_queries": 38,
+      "miss_queries": 0,
+      "correct_abstention_rate": 0.25
+    }
+  }
+}

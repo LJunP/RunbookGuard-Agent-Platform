@@ -1,0 +1,46 @@
+{
+  "ran_at": "2026-08-27T06:24:09.338249+00:00",
+  "base_url": "https://opencode.ai/zen/go/v1",
+  "model": "glm-5.3-flash",
+  "scenario": "db-pool-exhaustion-v1",
+  "scenario_fingerprint": "ccc3bcbda01f7dd7cea17726cc06196db82906aaf6ed0a1fb3d5ca6f51c085d4",
+  "total_calls_made": 4,
+  "results": [
+    {
+      "case": "structured_non_streaming",
+      "outcome": "provider_ok",
+      "finish_reason": "stop",
+      "attempts": 1,
+      "prompt_tokens": 600,
+      "completion_tokens": 714,
+      "total_tokens": 1314,
+      "raw_text": "{\"root_cause\": \"Database connection pool exhaustion on 'orders-primary': db_pool_active reached the configured max of 50 while db_pool_wait_count spiked from 0 to ~179.55, so requests queued waiting for a connection and timed out after 5000ms. The timing correlates with deployment v1.5.0, whose only changed configuration key is orders.repository.connectionLeaseMode, suggesting the new lease mode holds connections longer or leaks leases, driving saturation.\", \"confidence\": \"high\", \"evidence\": [\"db_pool_active rose from 12.0 to 50.0, exactly equal to db_pool_max (50.0), indicating full pool saturation across all 71 samples of the window.\", \"db_pool_wait_count increased from 0.0 to a peak of 179.55, showing a large backlog of requests blocked waiting for connections.\", \"Repeated ERROR log lines: 'connection pool exhausted: timeout acquiring connection after 5000ms (pool=orders-primary)', matching saturated-pool behavior rather than network or query failures.\", \"http_p99_latency_ms degraded from 185.091 ms to 3324.833 ms, consistent with requests stalling on connection acquisition timeouts.\", \"Deployment v1.5.0 (previous_version v1.4.2) changed exactly one config key: orders.repository.connectionLeaseMode, providing a plausible trigger for altered connection hold/lease behavior.\"], \"recommended_next_step\": \"Roll back the orders service from v1.5.0 to v1.4.2 (or revert the orders.repository.connectionLeaseMode change), then verify that db_pool_active drops below db_pool_max and db_pool_wait_count returns to 0 while http_p99_latency_ms recovers toward its baseline of ~185 ms.\"}",
+      "parse_outcome": "valid",
+      "unwrapped": false,
+      "root_cause": "Database connection pool exhaustion on 'orders-primary': db_pool_active reached the configured max of 50 while db_pool_wait_count spiked from 0 to ~179.55, so requests queued waiting for a connection and timed out after 5000ms. The timing correlates with deployment v1.5.0, whose only changed configuration key is orders.repository.connectionLeaseMode, suggesting the new lease mode holds connections longer or leaks leases, driving saturation.",
+      "confidence": "high",
+      "evidence_count": 5
+    },
+    {
+      "case": "streaming",
+      "outcome": "stream_ok",
+      "chunk_count": 2,
+      "final_text": "Red\nBlue\nGreen",
+      "terminator_seen": true
+    },
+    {
+      "case": "bad_credentials",
+      "outcome": "ProviderAuthError",
+      "failure_class": "authorization_failed",
+      "retriable": false,
+      "calls_made": 1,
+      "error": "provider rejected credentials (HTTP 401): {\"type\":\"error\",\"error\":{\"type\":\"AuthError\",\"message\":\"Invalid API key.\"}}",
+      "key_leaked_in_error": false
+    },
+    {
+      "case": "json_mode_probe",
+      "outcome": "supported",
+      "raw_text": "{\"status\":\"ok\"}"
+    }
+  ]
+}

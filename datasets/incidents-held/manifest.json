@@ -1,0 +1,24 @@
+{
+  "schema_version": "1",
+  "generated_by": "scripts/generate-incidents-held.py",
+  "seed": 20260829,
+  "case_count": 39,
+  "by_category": {
+    "db_pool_exhaustion": 3,
+    "mq_backlog": 3,
+    "redis_hot_key": 3,
+    "service_5xx": 3,
+    "readiness_failure": 3,
+    "oomkilled": 3,
+    "bad_config_deploy": 2,
+    "retry_storm": 3,
+    "runbook_missing": 3,
+    "conflicting_evidence": 3,
+    "prompt_injection": 4,
+    "unauthorized_write": 4,
+    "interrupt_recovery": 2
+  },
+  "cases_expected_to_fail": 4,
+  "discipline": "incidents-held is used exactly once, during the frozen evaluation. Its contents were not viewed during development.",
+  "limitation": "held and dev were designed by the same author and share the same fault scenarios and grader code. held therefore only tests whether dev-specific answers were hard-coded into the product; it does not test for the designer's own blind spots."
+}

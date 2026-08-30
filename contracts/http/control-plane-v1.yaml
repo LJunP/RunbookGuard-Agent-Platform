@@ -1,0 +1,573 @@
+openapi: 3.1.0
+info:
+  title: RunbookGuard Control Plane API
+  version: 0.1.0
+  description: |
+    Java Control Plane 的对外契约（M1）。这是跨语言边界：Python Agent Runtime 与 React
+    控制台都只通过本契约访问业务事实，不共享内部对象。
+
+    权限模型要点：
+    - Approval 的权威判定在本服务，Agent Runtime 只能 request 与 consume。
+    - AGENT_RUNTIME 角色不含 APPROVER，且发起人不能批准自己的请求。
+    - 所有 tenant 作用域从认证身份派生，请求体或查询参数中的 tenant 一律忽略。
+
+servers:
+  - url: http://127.0.0.1:8080
+    description: 本地 Docker Compose
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: incidents
+  - name: runs
+  - name: approvals
+  - name: audit
+
+paths:
+  /api/v1/incidents:
+    post:
+      tags: [incidents]
+      summary: 创建 Incident
+      description: 需要 OPERATOR 角色。受 principal 级固定窗口限流。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIncidentRequest'
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+    get:
+      tags: [incidents]
+      summary: 列出本租户 Incident
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0, minimum: 0 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Incident' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /api/v1/incidents/{incidentId}:
+    get:
+      tags: [incidents]
+      summary: 读取 Incident
+      description: 其它租户的资源返回 404 而非 403，避免泄漏资源存在性。
+      parameters:
+        - { name: incidentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/incidents/{incidentId}/status:
+    patch:
+      tags: [incidents]
+      summary: 更新 Incident 状态（乐观锁）
+      description: expectedVersion 必须等于当前 version，否则 409。服务端不自动重试。
+      parameters:
+        - { name: incidentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, expectedVersion]
+              properties:
+                status: { $ref: '#/components/schemas/IncidentStatus' }
+                expectedVersion: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/runs:
+    post:
+      tags: [runs]
+      summary: 创建 AgentRun
+      description: |
+        需要 OPERATOR 或 AGENT_RUNTIME 角色。预算字段（max_steps / deadline /
+        cost_budget / token_budget / tool_call_budget）由服务端配置派生，客户端不能指定——
+        否则调用方可以自己把上限设成无穷大。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRunRequest' }
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+    get:
+      tags: [runs]
+      summary: 按 Incident 列出 Run
+      parameters:
+        - { name: incidentId, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AgentRun' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/runs/{runId}:
+    get:
+      tags: [runs]
+      summary: 读取 Run
+      parameters:
+        - { name: runId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentRun' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/runs/{runId}/status:
+    patch:
+      tags: [runs]
+      summary: 推进 Run 到非终态
+      description: 终态必须走 /terminal 端点；这里传终态会得到 400。
+      parameters:
+        - { name: runId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, expectedVersion]
+              properties:
+                status: { $ref: '#/components/schemas/RunStatus' }
+                currentStep: { type: string, maxLength: 64, nullable: true }
+                expectedVersion: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentRun' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: 版本冲突，或 Run 已达终态
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+
+  /api/v1/runs/{runId}/terminal:
+    post:
+      tags: [runs]
+      summary: 结算终态（幂等）
+      description: |
+        唯一终态的写入点。重复调用不报错：返回既有终态且 firstSettlement=false。
+        M2 的消息重投与 Lease 接管依赖这个语义。
+      parameters:
+        - { name: runId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [terminalStatus]
+              properties:
+                terminalStatus:
+                  type: string
+                  enum: [COMPLETE, FAILED, BLOCKED]
+                failureClass: { type: string, maxLength: 64, nullable: true }
+      responses:
+        '200':
+          description: 结算结果
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [terminalStatus, firstSettlement]
+                properties:
+                  terminalStatus: { type: string, enum: [COMPLETE, FAILED, BLOCKED] }
+                  firstSettlement:
+                    type: boolean
+                    description: false 表示该 Run 之前已有终态，本次未改变任何状态
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/approvals:
+    post:
+      tags: [approvals]
+      summary: 发起审批请求
+      description: |
+        需要 AGENT_RUNTIME 角色。服务端对 arguments 做 ADR-0002 规范化并计算
+        arguments_digest。arguments 中出现浮点数会被拒绝（400 invalid_arguments）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RequestApprovalRequest' }
+      responses:
+        '201':
+          description: 已创建，decision=PENDING
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Approval' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/approvals/pending:
+    get:
+      tags: [approvals]
+      summary: 列出本租户待审批
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Approval' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /api/v1/approvals/{approvalId}/decision:
+    post:
+      tags: [approvals]
+      summary: 人工决策
+      description: |
+        需要 APPROVER 角色。发起人不能批准自己的请求（403）。
+        已过期或已决策的审批返回 409。
+      parameters:
+        - { name: approvalId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approve]
+              properties:
+                approve: { type: boolean }
+                reason: { type: string, maxLength: 512, nullable: true }
+      responses:
+        '200':
+          description: 决策完成
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Approval' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: 审批不可决策（已过期或已决策）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+
+  /api/v1/approvals/{approvalId}/consume:
+    post:
+      tags: [approvals]
+      summary: 执行前校验并消费审批
+      description: |
+        威胁 T-2 的拦截点。四项必须全部匹配：toolName、resourceRef、arguments 的规范化
+        摘要、以及审批仍处于 APPROVED 且未过期未消费。任一不符返回
+        403 approval_verification_failed，且不消费审批。
+
+        单次使用：成功后 consumedAt 被设置，同一审批不能再次使用（防重放）。
+      parameters:
+        - { name: approvalId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toolName, resourceRef, arguments]
+              properties:
+                toolName: { type: string, maxLength: 128 }
+                resourceRef: { type: string, maxLength: 256 }
+                arguments: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: 校验通过并已消费
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Approval' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403':
+          description: 校验失败（摘要/工具/资源不符、已过期、已消费、并发消费）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/audit-events:
+    get:
+      tags: [audit]
+      summary: 查询审计事件（只追加，不可修改）
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+        - { name: resourceType, in: query, schema: { type: string } }
+        - { name: resourceId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AuditEvent' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        API token。服务端只存 SHA-256 摘要，明文不落库、不进日志。
+
+  responses:
+    BadRequest:
+      description: 请求非法
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Unauthenticated:
+      description: 缺少或无效凭据
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Forbidden:
+      description: 已认证但无权限
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    NotFound:
+      description: 资源不存在，或不属于调用方租户
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Conflict:
+      description: 状态冲突
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    RateLimited:
+      description: 超过限流
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+
+  schemas:
+    ApiError:
+      type: object
+      required: [error, message, timestamp]
+      properties:
+        error:
+          type: string
+          enum:
+            - unauthenticated
+            - forbidden
+            - not_found
+            - rate_limited
+            - version_conflict
+            - already_terminal
+            - approval_verification_failed
+            - approval_not_decidable
+            - invalid_arguments
+            - validation_failed
+            - invalid_request
+            - internal_error
+        message:
+          type: string
+          description: 出站前经过 Secret 脱敏。
+        timestamp: { type: string, format: date-time }
+
+    IncidentStatus:
+      type: string
+      enum: [OPEN, DIAGNOSING, AWAITING_APPROVAL, MITIGATING, RESOLVED, CLOSED]
+
+    RunStatus:
+      type: string
+      enum:
+        - CREATED
+        - COLLECT_CONTEXT
+        - RETRIEVE_RUNBOOK
+        - FORM_HYPOTHESES
+        - SELECT_TOOL
+        - POLICY_CHECK
+        - AWAITING_APPROVAL
+        - EXECUTING_TOOL
+        - OBSERVE
+        - VERIFY
+        - PROPOSE_ACTION
+        - BLOCKED
+        - COMPLETE
+        - FAILED
+
+    CreateIncidentRequest:
+      type: object
+      required: [source, severity, title]
+      properties:
+        source: { type: string, maxLength: 64 }
+        severity: { type: string, pattern: '^P[1-4]$' }
+        title: { type: string, maxLength: 512 }
+        startedAt: { type: string, format: date-time, nullable: true }
+
+    Incident:
+      type: object
+      required: [incidentId, tenantId, source, severity, title, startedAt, currentStatus, version]
+      properties:
+        incidentId: { type: string }
+        tenantId: { type: string }
+        source: { type: string }
+        severity: { type: string }
+        title: { type: string }
+        startedAt: { type: string, format: date-time }
+        currentStatus: { $ref: '#/components/schemas/IncidentStatus' }
+        version: { type: integer, format: int64 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateRunRequest:
+      type: object
+      required: [incidentId, graphVersion, promptVersion, modelId, datasetVersion]
+      properties:
+        incidentId: { type: string }
+        graphVersion: { type: string, maxLength: 32 }
+        promptVersion: { type: string, maxLength: 32 }
+        modelId: { type: string, maxLength: 128 }
+        datasetVersion: { type: string, maxLength: 32 }
+
+    AgentRun:
+      type: object
+      required: [runId, incidentId, tenantId, status, maxSteps, deadline, version]
+      properties:
+        runId: { type: string }
+        incidentId: { type: string }
+        tenantId: { type: string }
+        principalId: { type: string }
+        graphVersion: { type: string }
+        promptVersion: { type: string }
+        modelId: { type: string }
+        datasetVersion: { type: string }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        currentStep: { type: string, nullable: true }
+        maxSteps: { type: integer }
+        deadline: { type: string, format: date-time }
+        costBudgetMicros:
+          type: integer
+          format: int64
+          description: 以微单位存储的整数。ADR-0002 禁止浮点参与摘要与预算计算。
+        costSpentMicros: { type: integer, format: int64 }
+        tokenBudget: { type: integer, format: int64 }
+        tokenSpent: { type: integer, format: int64 }
+        toolCallBudget: { type: integer }
+        toolCallCount: { type: integer }
+        stepsUsed: { type: integer }
+        failureClass: { type: string, nullable: true }
+        version: { type: integer, format: int64 }
+
+    RequestApprovalRequest:
+      type: object
+      required: [runId, toolName, resourceRef, arguments]
+      properties:
+        runId: { type: string }
+        toolName: { type: string, maxLength: 128 }
+        resourceRef: { type: string, maxLength: 256 }
+        arguments:
+          type: object
+          additionalProperties: true
+          description: |
+            规范化规则见 ADR-0002：键按 UTF-16 码元序排序、非 ASCII 不转义、整数限制在
+            ±(2^53-1)、浮点数与 NaN/Infinity 被拒绝、嵌套深度上限 8、规范化后 <= 8 KiB、
+            重复键与未配对代理项被拒绝。null 保留且 {"a":null} 与 {} 摘要不同。
+
+    Approval:
+      type: object
+      required: [approvalId, runId, tenantId, toolName, resourceRef, argumentsDigest, digestAlg, decision, expiresAt]
+      properties:
+        approvalId: { type: string }
+        runId: { type: string }
+        tenantId: { type: string }
+        requestedBy: { type: string }
+        toolName: { type: string }
+        resourceRef: { type: string }
+        argumentsDigest:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: 规范化参数的 SHA-256，小写十六进制。
+        digestAlg:
+          type: string
+          enum: [JCS-SHA256-V1]
+          description: 与摘要一同持久化，便于将来更换算法时旧记录仍可解释。
+        argumentsCanonical:
+          type: string
+          description: 规范化后的参数原文，供审批人核对实际将执行什么。
+        decision: { type: string, enum: [PENDING, APPROVED, REJECTED, EXPIRED] }
+        decidedBy: { type: string, nullable: true }
+        expiresAt: { type: string, format: date-time }
+        decidedAt: { type: string, format: date-time, nullable: true }
+        consumedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 非 null 表示已被消费，不能再次用于执行。
+
+    AuditEvent:
+      type: object
+      required: [eventId, tenantId, action, resourceType, outcome, occurredAt]
+      properties:
+        eventId: { type: integer, format: int64 }
+        tenantId: { type: string }
+        principalId: { type: string, nullable: true }
+        action: { type: string }
+        resourceType: { type: string }
+        resourceId: { type: string, nullable: true }
+        outcome: { type: string, enum: [ALLOWED, DENIED, FAILED] }
+        reason: { type: string, nullable: true }
+        occurredAt: { type: string, format: date-time }

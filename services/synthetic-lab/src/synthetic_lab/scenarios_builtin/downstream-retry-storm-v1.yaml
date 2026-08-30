@@ -1,0 +1,95 @@
+id: downstream-retry-storm-v1
+version: 1
+description: >
+  synthetic-inventory 出现短暂变慢后，synthetic-gateway 的客户端重试（3 次、无退避、
+  无熔断）把请求量放大约 3 倍，把一次小抖动放大成持续过载。
+  关键设定：上游入站请求量平稳，放大发生在**出站**——因此根因是重试策略，
+  不是「流量上涨」，也不是下游本身彻底故障。对应说明书 §11 第 8 类。
+seed: 20260903
+timeline:
+  baseline_minutes: 30
+  incident_minutes: 12
+sample_interval_seconds: 30
+
+services:
+  - name: synthetic-gateway
+    metrics:
+      inbound_request_rate:
+        # 入站平稳：排除「流量上涨」。
+        baseline: 200
+        incident: 200
+        shape: flat
+        unit: rps
+      outbound_request_rate:
+        baseline: 205
+        incident: 612
+        shape: ramp
+        unit: rps
+      retry_count:
+        baseline: 3
+        incident: 410
+        shape: ramp
+        unit: count
+      http_p99_latency_ms:
+        baseline: 190
+        incident: 4100
+        shape: ramp
+        unit: ms
+      http_error_rate:
+        baseline: 0.003
+        incident: 0.21
+        shape: ramp
+        unit: ratio
+      circuit_breaker_state:
+        # 0 = closed。恒为 0 是「没有熔断保护」这条论据，必须精确。
+        baseline: 0
+        incident: 0
+        shape: flat
+        unit: enum
+        noise: 0
+    logs:
+      - level: INFO
+        message: "GET /api/inventory/stock upstream 200 in 41ms"
+        phase: baseline
+        per_minute: 4
+      - level: WARN
+        message: "upstream synthetic-inventory timed out after 800ms, retrying (attempt 2/3, no backoff)"
+        phase: incident
+        per_minute: 16
+      - level: ERROR
+        message: "all 3 attempts to synthetic-inventory failed, returning 503 to caller"
+        phase: incident
+        per_minute: 6
+
+  # 下游只是先变慢，不是彻底故障。它的错误率随放大而上升，是**结果**不是原因。
+  - name: synthetic-inventory
+    metrics:
+      http_p99_latency_ms:
+        baseline: 55
+        incident: 900
+        shape: step
+        unit: ms
+      http_error_rate:
+        baseline: 0.001
+        incident: 0.14
+        shape: ramp
+        unit: ratio
+      inbound_request_rate:
+        baseline: 205
+        incident: 612
+        shape: ramp
+        unit: rps
+      cpu_utilisation:
+        baseline: 0.31
+        incident: 0.97
+        shape: ramp
+        unit: ratio
+    logs:
+      - level: WARN
+        message: "request queue depth 180, shedding load from client=synthetic-gateway"
+        phase: incident
+        per_minute: 10
+      - level: INFO
+        message: "stock lookup served in 48ms"
+        phase: baseline
+        per_minute: 3

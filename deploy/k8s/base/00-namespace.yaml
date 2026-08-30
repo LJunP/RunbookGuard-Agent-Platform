@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: runbookguard
+  labels:
+    name: runbookguard
+    # NetworkPolicy 的 namespaceSelector 靠标签匹配。不打标签的命名空间
+    # 无法被「只允许来自本命名空间」这类规则精确表达。
+    app.kubernetes.io/part-of: runbookguard
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runbookguard-config
+  namespace: runbookguard
+data:
+  # 服务发现走 Service 名。不写 IP：Pod 重建后 IP 会变。
+  MYSQL_HOST: mysql
+  MYSQL_PORT: "3306"
+  MYSQL_DATABASE: runbookguard
+  MYSQL_USER: runbookguard
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  CONTROL_PLANE_PORT: "8080"
+  SYNTHETIC_LAB_URL: http://synthetic-lab:8090
+  # 集群里默认开种子数据：演练需要固定 token 才能脚本化。
+  # 这是**本地集群专用**，任何真实部署都不该打开。
+  RUNBOOKGUARD_SEED_DEV_DATA: "true"
+  # 默认 fake provider：集群启动不产生任何真实 API 调用，也不需要凭据。
+  RUNBOOKGUARD_LLM_PROVIDER: fake
+  # 集群内没有 collector（M8 不部署观测栈，那是 compose 的职责），
+  # 因此关掉 trace 导出，否则导出器会周期性重试并刷日志。
+  RUNBOOKGUARD_OTEL_ENABLED: "false"
+  MANAGEMENT_TRACING_ENABLED: "false"
+  CONSOLE_ALLOWED_ORIGINS: "http://127.0.0.1:30081,http://localhost:30081"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: runbookguard-secrets
+  namespace: runbookguard
+type: Opaque
+stringData:
+  # 本地集群凭据。**不是**生产做法：真实部署应当用外部 Secret 管理
+  # （External Secrets / Sealed Secrets / 云厂商 KMS），而不是把明文提交进仓库。
+  # 这里明文写出来是因为演练脚本需要它们，且它们只对本地 kind 集群有效。
+  MYSQL_PASSWORD: local-dev-only
+  MYSQL_ROOT_PASSWORD: local-dev-root
+  RABBITMQ_USER: runbookguard
+  RABBITMQ_PASSWORD: local-dev-only

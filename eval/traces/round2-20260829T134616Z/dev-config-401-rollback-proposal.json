@@ -1,0 +1,167 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-config-401-rollback-proposal",
+  "case_id": "dev-config-401-rollback-proposal",
+  "config_fingerprint": "5256f85964387c970a1213227f175baf69311b44bc8650eb2f96d1f91121d441",
+  "recorded_at": "2026-08-29T13:46:29.065860+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_recent_deployments",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-2a99be2e8f15",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "2a99be2e8f15df87afd67738cfa16a9840584b4c56fcf1e0abe6a4247071e1df",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-c9284138b94a",
+      "source_type": "get_recent_deployments",
+      "source_identity": "service:synthetic-checkout",
+      "content_hash": "c9284138b94a39f4fc57a4500db8ada769fe0aec1f943ede31279509112009c8",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "the audience config regressed in v3.1.0; rolling back to v3.0.4 restores it",
+    "confidence": "high",
+    "root_cause_service": "synthetic-checkout",
+    "claims": [
+      {
+        "statement": "evidence ev-2a99be2e8f15 supports the stated cause",
+        "evidence_ids": [
+          "ev-2a99be2e8f15"
+        ]
+      }
+    ],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": {
+      "tool_name": "rollback_synthetic_deployment",
+      "arguments": {
+        "service": "synthetic-checkout",
+        "target_version": "v3.0.4"
+      },
+      "justification": "the runbook lists this as the safe action for this symptom"
+    },
+    "recommended_next_step": "apply the runbook safe action after approval",
+    "unwrapped": false
+  },
+  "digest": "e7e700bbee88092f91f99b87d3b8a0f9d8b74260d424b1d7c1773057e23acf53"
+}

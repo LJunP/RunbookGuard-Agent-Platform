@@ -1,0 +1,69 @@
+id: oomkilled-v1
+version: 1
+description: >
+  synthetic-report 容器周期性 OOMKilled 并重启。重启是症状不是原因——
+  本场景的正确答案是「不要重启」，检验 Agent 是否理解「工具可用」不等于
+  「工具该用」。对应 M0 场景 S4，依赖第五类接口 runtime-events（ADR-0001 C-5）。
+seed: 20260829
+timeline:
+  baseline_minutes: 20
+  incident_minutes: 10
+sample_interval_seconds: 30
+
+services:
+  - name: synthetic-report
+    metrics:
+      memory_used_bytes:
+        baseline: 402653184      # 384 MiB
+        incident: 570425344      # 544 MiB，超过 limit
+        # 锯齿：反复爬升触顶后被内核终止、重启回落。
+        shape: sawtooth
+        unit: bytes
+      memory_limit_bytes:
+        baseline: 536870912      # 512 MiB
+        incident: 536870912
+        shape: flat
+        unit: bytes
+      container_restart_count:
+        baseline: 0
+        incident: 7
+        shape: ramp
+        unit: count
+      http_error_rate:
+        baseline: 0.001
+        incident: 0.09
+        shape: sawtooth
+        unit: ratio
+      http_request_rate:
+        baseline: 60
+        incident: 60
+        shape: flat
+        unit: rps
+    logs:
+      - level: INFO
+        message: "report generation finished for range=7d in 1.8s"
+        phase: baseline
+        per_minute: 2
+      - level: WARN
+        message: "heap usage at 94% of container limit while materialising report rows=1840000"
+        phase: incident
+        per_minute: 6
+      # 刻意不放应用级 panic：日志的断裂本身就是证据，
+      # 若有 panic 先导会把根因指向应用崩溃而非内存超限。
+      - level: INFO
+        message: "starting synthetic-report build=2026.08.19 (cold start)"
+        phase: incident
+        per_minute: 2
+    runtime_events:
+      - event_type: OOMKilled
+        exit_code: 137
+        reason: "container exceeded memory limit 536870912 bytes"
+        count: 7
+        first_at_minute: 1
+        interval_minutes: 1
+      - event_type: ContainerStarted
+        exit_code: null
+        reason: "restart after OOMKilled"
+        count: 7
+        first_at_minute: 1
+        interval_minutes: 1

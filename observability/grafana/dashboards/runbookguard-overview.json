@@ -1,0 +1,209 @@
+{
+  "uid": "runbookguard-overview",
+  "title": "RunbookGuard 概览",
+  "tags": ["runbookguard"],
+  "timezone": "browser",
+  "editable": false,
+  "schemaVersion": 39,
+  "refresh": "15s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "type": "row",
+      "title": "安全边界（这一行是这个项目的内核，放在最上面）",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Policy 拒绝（按原因）",
+      "description": "deny_reason 是封闭枚举。这个面板回答「有没有东西在被拦下来」——全为 0 时要么系统很干净，要么 Policy 根本没在跑。",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum by (deny_reason) (rate(runbookguard_policy_decisions_total{decision=\"deny\"}[5m]))",
+          "legendFormat": "{{deny_reason}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 20 } },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "动作工具执行次数",
+      "description": "写动作只能作用于 synthetic-lab，且必须先经审批。这个数字非零时，Trace 里必须能找到对应的已消费审批——对不上就是安全模型被绕过了。",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(runbookguard_tool_calls_total{tool_name=~\"restart_synthetic_service|rollback_synthetic_deployment|throttle_synthetic_traffic\",outcome=\"ok\"}[$__range]))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "type": "stat",
+      "title": "Runbook 检索未命中率",
+      "description": "未命中不是故障：证据不足时正确弃答是要求的行为。这个数字持续偏高说明语料覆盖不足，而不是检索坏了。",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(runbookguard_retrieval_queries_total{hit=\"false\"}[$__range])) / clamp_min(sum(increase(runbookguard_retrieval_queries_total[$__range])), 1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1 },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "type": "row",
+      "title": "有界执行与终态",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Run 终态（按 failure_class）",
+      "description": "八条终止条件各自有一个 failure_class。某一类突然升高就是归因线索——这也是为什么 failure_class 必须是封闭枚举而不是自由文本。",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum by (failure_class) (rate(runbookguard_run_terminations_total[5m]))",
+          "legendFormat": "{{failure_class}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 20, "stacking": { "mode": "normal" } } },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "模型调用（按结果）",
+      "description": "failure 与 ok 分开画。M3 的判据是「模型失败不产生假成功」，因此 failure 上升而 Run 成功率不变，本身就是一个需要解释的现象。",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(runbookguard_provider_calls_total[5m]))",
+          "legendFormat": "{{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 20 } },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "延迟与成本",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Agent Runtime HTTP p95 / p99",
+      "description": "分位数用 histogram_quantile 算，不用平均值：平均延迟会把「大部分很快、少数极慢」这种最需要关注的形态抹平。",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, path) (rate(runbookguard_http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{path}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, path) (rate(runbookguard_http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99 {{path}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "累计模型成本（micros，按原价）",
+      "description": "按原价计价而非促销价：促销结束后按折扣价配置的预算约束力会静默减半。高估成本是安全的方向。",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "targets": [
+        {
+          "expr": "sum by (model) (increase(runbookguard_provider_cost_micros_total[$__range]))",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "type": "row",
+      "title": "控制面与中间件",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Control Plane HTTP 5xx 率",
+      "description": "Java 侧由 Spring Boot Actuator 提供。5xx 与 4xx 分开：4xx 升高通常是调用方的问题（例如 Policy 在拒绝），5xx 才是控制面自己坏了。",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"control-plane\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"control-plane\"}[5m])), 0.001)",
+          "legendFormat": "5xx rate",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"control-plane\",status=~\"4..\"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"control-plane\"}[5m])), 0.001)",
+          "legendFormat": "4xx rate",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0 }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "RabbitMQ 队列深度",
+      "description": "M8 的 MQ backlog 演练看这个面板。抓取间隔 15s 是为了让一次注入在几个采样点内可见。",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "targets": [
+        {
+          "expr": "sum by (queue) (rabbitmq_queue_messages)",
+          "legendFormat": "{{queue}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "type": "stat",
+      "title": "抓取目标健康",
+      "description": "面板全空有两种原因：没有流量，或者 Prometheus 抓不到目标。这个面板用来区分这两者——先看它，再看别的。",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 36 },
+      "targets": [{ "expr": "up", "legendFormat": "{{job}}", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "value_and_name" }
+    }
+  ]
+}

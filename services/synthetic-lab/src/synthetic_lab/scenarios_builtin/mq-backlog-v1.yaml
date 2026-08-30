@@ -1,0 +1,76 @@
+id: mq-backlog-v1
+version: 1
+description: >
+  synthetic-notify 的消费者因下游变慢而处理速度下降，队列持续积压。
+  关键设定：生产速率保持平稳，且存在一次与故障无关的部署作为诱饵。
+  对应 M0 场景 S2。
+seed: 20260827
+timeline:
+  baseline_minutes: 30
+  incident_minutes: 15
+sample_interval_seconds: 30
+
+services:
+  - name: synthetic-notify
+    metrics:
+      message_process_duration_p99_ms:
+        baseline: 42
+        incident: 1850
+        shape: ramp
+        unit: ms
+      consumer_throughput:
+        baseline: 320
+        incident: 45
+        shape: ramp
+        unit: msg_per_sec
+      downstream_timeout_count:
+        baseline: 0
+        incident: 240
+        shape: ramp
+        unit: count
+    logs:
+      - level: INFO
+        message: "notification dispatched to channel=push in 39ms"
+        phase: baseline
+        per_minute: 4
+      - level: WARN
+        message: "downstream call to synthetic-pushgw timed out after 2000ms, retrying (attempt 2/3)"
+        phase: incident
+        per_minute: 10
+      - level: ERROR
+        message: "message handling exceeded budget: consumer lag growing, prefetch=1"
+        phase: incident
+        per_minute: 4
+    deployments:
+      # 诱饵：时间上接近故障但与根因无关。检验 Agent 是否会误归因。
+      - version: v2.3.1
+        previous_version: v2.3.0
+        at_minute: -6
+        changed_config_keys:
+          - notify.template.footerText
+        is_decoy: true
+
+queues:
+  - name: synthetic-notify.work
+    consumer_count: 3
+    depth:
+      baseline: 120
+      incident: 48000
+      shape: ramp
+      unit: messages
+    oldest_age_seconds:
+      baseline: 2
+      incident: 900
+      shape: ramp
+      unit: seconds
+    # 排除性证据：生产端没有变化，因此积压不是流量上升导致的。
+    publish_rate:
+      baseline: 310
+      incident: 310
+      shape: flat
+      unit: msg_per_sec
+    deliver_rate:
+      baseline: 308
+      incident: 44
+      shape: ramp
+      unit: msg_per_sec

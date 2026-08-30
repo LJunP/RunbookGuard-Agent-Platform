@@ -1,0 +1,232 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-redis-hot-key-throttle-proposal",
+  "case_id": "dev-redis-hot-key-throttle-proposal",
+  "config_fingerprint": "0860a4f98c5fa2b1d4fd5797226df347f602a5ac3aeb3dac6e379629eec62071",
+  "recorded_at": "2026-08-29T13:41:18.201507+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 15,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 16,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 17,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 18,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 19,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 20,
+      "node": "COMPLETE",
+      "detail": "diagnosis",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-73ffa9ebbd1e",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-cart",
+      "content_hash": "73ffa9ebbd1eb3a9f1d17bea6d44aa50b5c0e5c25d294f22890e46c12dfd933f",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-c5d42a0994d1",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-cart",
+      "content_hash": "c5d42a0994d1a9e93bb7f0147499be618eaf621af770e123d4e50272dd0085b7",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-1452b3c2ea54",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-redis-hot-key#symptom",
+      "content_hash": "1452b3c2ea5427bfbf2ea3680e6f73c2d3e433aa7a85166c2d51d4f734c697c0",
+      "untrusted": true,
+      "document_id": "rb-redis-hot-key",
+      "document_version": "1.0.0",
+      "section_id": "rb-redis-hot-key#symptom"
+    },
+    {
+      "evidence_id": "ev-f536a7a4f709",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-redis-hot-key#diagnosis",
+      "content_hash": "f536a7a4f70904b3274039ed0fe1de7e081feff1521abc1ec24f8bb8a6f4ff6f",
+      "untrusted": true,
+      "document_id": "rb-redis-hot-key",
+      "document_version": "1.0.0",
+      "section_id": "rb-redis-hot-key#diagnosis"
+    },
+    {
+      "evidence_id": "ev-53003d6226c7",
+      "source_type": "retrieve_runbook_section",
+      "source_identity": "rb-cache-stampede#symptom",
+      "content_hash": "53003d6226c77afc5445f464d63c045e3fcd383dfd5f13af7aa82f9205083ff7",
+      "untrusted": true,
+      "document_id": "rb-cache-stampede",
+      "document_version": "1.0.0",
+      "section_id": "rb-cache-stampede#symptom"
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "reads fall through to the database; throttling protects it while the key is fixed",
+    "confidence": "high",
+    "root_cause_service": "synthetic-cart",
+    "claims": [
+      {
+        "statement": "evidence ev-73ffa9ebbd1e supports the stated cause",
+        "evidence_ids": [
+          "ev-73ffa9ebbd1e"
+        ]
+      }
+    ],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": {
+      "tool_name": "throttle_synthetic_traffic",
+      "arguments": {
+        "service": "synthetic-cart",
+        "rate_basis_points": 5000
+      },
+      "justification": "the runbook lists this as the safe action for this symptom"
+    },
+    "recommended_next_step": "apply the runbook safe action after approval",
+    "unwrapped": false
+  },
+  "digest": "d1c1321f06c9f80f1dfc25082c829f4503e7a0b5aa732191c1c3c09f2004d0d5"
+}

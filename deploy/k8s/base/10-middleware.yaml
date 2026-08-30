@@ -1,0 +1,211 @@
+# 中间件：MySQL / Redis / RabbitMQ。
+#
+# 用 Deployment + emptyDir 而不是 StatefulSet + PVC：这是**演练集群**，
+# 每次 apply 都从空库开始（Flyway 会建表）。用 PVC 会让「删掉 Pod 看它恢复」
+# 这个演练变成「删掉 Pod 看它带着旧数据恢复」，两者要验证的东西不同。
+#
+# 真实部署必须用 StatefulSet + PVC，这一点在 M8 Gate 报告里写明。
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: runbookguard
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: runbookguard
+  labels:
+    app: mysql
+    tier: data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    # 数据库不能同时跑两个实例写同一份 emptyDir。Recreate 而非 RollingUpdate。
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+        tier: data
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          args:
+            # 审计不可篡改的触发器在 binlog 开启时需要这个开关，
+            # 否则 Flyway V2 会以 ERROR 1419 失败。
+            - --log-bin-trust-function-creators=1
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_0900_ai_ci
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef: { name: runbookguard-config, key: MYSQL_DATABASE }
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef: { name: runbookguard-config, key: MYSQL_USER }
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: runbookguard-secrets, key: MYSQL_PASSWORD }
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: runbookguard-secrets, key: MYSQL_ROOT_PASSWORD }
+          # startupProbe 与 readinessProbe 分开：MySQL 首次启动要初始化数据目录，
+          # 可能超过 60s。只有 readinessProbe 时它会被反复重启而永远起不来
+          # （这正是 datasets 里 rb-readiness-probe-failure 描述的形态）。
+          startupProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$(MYSQL_ROOT_PASSWORD)"]
+            periodSeconds: 5
+            failureThreshold: 40
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$(MYSQL_ROOT_PASSWORD)"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+          # liveness 比 readiness 宽松得多：一次慢查询导致的 ping 超时应当让它
+          # 暂时不接流量（readiness 失败），而不是被重启（liveness 失败）。
+          # 两个探针配同样的阈值是一个常见错误，会把「慢」变成「重启风暴」。
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$(MYSQL_ROOT_PASSWORD)"]
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { cpu: "2", memory: 1Gi }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: runbookguard
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: runbookguard
+  labels:
+    app: redis
+    tier: data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        tier: data
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            periodSeconds: 5
+          livenessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            periodSeconds: 20
+            failureThreshold: 5
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: runbookguard
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: metrics
+      port: 15692
+      targetPort: 15692
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: runbookguard
+  labels:
+    app: rabbitmq
+    tier: data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+        tier: data
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.13-management-alpine
+          ports:
+            - containerPort: 5672
+            - containerPort: 15692
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef: { name: runbookguard-secrets, key: RABBITMQ_USER }
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef: { name: runbookguard-secrets, key: RABBITMQ_PASSWORD }
+          startupProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "ping"] }
+            periodSeconds: 10
+            failureThreshold: 18
+          readinessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "check_running"] }
+            periodSeconds: 15
+            timeoutSeconds: 10
+          livenessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "ping"] }
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 5
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 768Mi }

@@ -1,0 +1,100 @@
+server:
+  port: ${CONTROL_PLANE_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: runbookguard-control-plane
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:runbookguard}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8
+    username: ${MYSQL_USER:runbookguard}
+    password: ${MYSQL_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        # 手动 ack：自动 ack 会在消费者崩溃时丢消息，而 M2 要证明的恰恰是崩溃可恢复。
+        acknowledge-mode: manual
+        prefetch: 1
+        default-requeue-rejected: false
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      # 每条指标带上服务名与租户维度之外的静态标签。tenant 刻意**不**做成指标标签：
+      # 租户数量无上限，会造成指标基数爆炸（这正是 rb-metric-cardinality-explosion
+      # 这个 Runbook 描述的故障）。租户维度的分析走审计日志，不走 Prometheus。
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      # 本地演示全采样。生产环境要按流量下调——采样率写在配置里而不是代码里，
+      # 因为它是运维决定而非产品决定。
+      probability: ${OTEL_TRACES_SAMPLER_ARG:1.0}
+  otlp:
+    tracing:
+      # 未配置 endpoint 时导出器仍会构造并周期性重试连接，日志里会刷失败。
+      # 默认指向 compose 里的 collector；不跑 collector 时用
+      # MANAGEMENT_TRACING_ENABLED=false 关掉整条链路。
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://127.0.0.1:4318/v1/traces}
+
+runbookguard:
+  # 只在本地开发环境显式打开。它会写入固定 token 的 principal。
+  seed-dev-data: ${RUNBOOKGUARD_SEED_DEV_DATA:false}
+  console:
+    # 控制台的来源。默认只允许本地 Vite 与 compose 里的 nginx——
+    # 通配 * 会让任何网页都能带着用户的 token 调这套 API。
+    allowed-origins: ${CONSOLE_ALLOWED_ORIGINS:http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:8081,http://localhost:8081}
+  approval:
+    default-ttl: PT15M
+  ratelimit:
+    # 每个 principal 每分钟可创建的 Incident 数。超过即 429，不排队。
+    incident-create-per-minute: 30
+    run-create-per-minute: 60
+  worker:
+    # Lease TTL 与 heartbeat 间隔。TTL 必须显著大于 heartbeat 间隔，否则一次 GC 停顿
+    # 就会让健康的 Worker 丢掉 Lease。
+    lease-ttl: PT30S
+    heartbeat-interval: PT5S
+    # 达到此投递次数后主动结算 FAILED/max_delivery_exceeded，不留在 DLQ 悬挂。
+    max-delivery-attempts: 5
+    reclaim-scan-interval: PT10S
+  run-defaults:
+    max-steps: 25
+    wall-clock: PT10M
+    cost-budget-micros: 500000
+    token-budget: 200000
+    tool-call-budget: 20
+
+logging:
+  level:
+    root: INFO
+    io.runbookguard: INFO

@@ -1,0 +1,33 @@
+# kind 集群定义。
+#
+# 两个 worker 而不是单节点：M8 的故障演练要看「删掉一个 Pod 后流量转到另一个副本」，
+# 单节点集群里所有副本都在同一台机器上，Pod 反亲和性与节点级故障都测不出来。
+#
+# 不用 disableDefaultCNI：kindnetd v20250512 **实测会执行 NetworkPolicy**
+# （见 scripts/verify-networkpolicy-enforcement.sh 与 M8 Gate 报告 §4.1）。
+# 换 Calico 是 kind 文档明确标注的 "power user feature with limited support"，
+# 在策略已能执行的前提下，换掉它只会引入一个不必要的变量。
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: rg-m8
+
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      # 只映射控制台与控制面：演练要从宿主机验证「服务还能不能访问」。
+      # 其余端口走 kubectl port-forward 按需开，映射太多会与 compose 抢端口。
+      - containerPort: 30080
+        hostPort: 30080
+        protocol: TCP
+      - containerPort: 30081
+        hostPort: 30081
+        protocol: TCP
+  - role: worker
+  - role: worker
