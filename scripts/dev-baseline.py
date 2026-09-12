@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """incidents-dev 非正式摸底（DEV_PROMPT §12 M5 要点）。
 
+**已被取代**：正式路径是 scripts/eval-m6-frozen.py（冻结评测）与
+scripts/eval-m6-real-model.py（真实模型质量）。这个脚本保留是因为
+M5 Gate 报告引用了它的输出；它的 provider 脚本在 M6 换 ADR-0009 schema 时
+同步更新过，跑通它不再有评测意义。
+
+
 **这不是正式评测。** 它的目的是在 M6 冻结之前先看到数字——如果那时才发现成功率只有
 65%，按纪律不能改口径，只能回头改产品重新冻结一轮，代价极大。
 
@@ -28,76 +34,15 @@ from agent_runtime.evaluation.harness import (  # noqa: E402
     EvaluationHarness,
     HarnessConfig,
 )
-from agent_runtime.provider.errors import ProviderTimeout  # noqa: E402
-from agent_runtime.provider.fake import FakeProvider, FakeTurn  # noqa: E402
 from agent_runtime.retrieval.service import RetrievalService  # noqa: E402
-from agent_runtime.tools.policy import ApprovalFact  # noqa: E402
 
 LAB = "http://127.0.0.1:8090"
 CORPUS = REPO / "datasets" / "runbooks"
 REPORTS = REPO / "eval" / "reports"
 
-VALID_DIAGNOSIS = json.dumps(
-    {
-        "root_cause": "the evidence points at a single identifiable cause",
-        "confidence": "high",
-        "evidence": ["ev-1"],
-        "recommended_next_step": "apply the runbook's safe action after approval",
-    }
-)
-
-
-def provider_for(case: IncidentCase) -> FakeProvider:
-    """按 case 选 provider 行为。
-
-    用 fake 而非真实模型：这次摸底要测的是**编排与安全机制**在完整 case 上的表现，
-    而真实模型会引入不确定性，让「成功率 85%」说不清是机制问题还是模型问题。
-    真实模型的诊断质量在 M6 单独测。
-    """
-    if case.case_id == "dev-model-garbage":
-        return FakeProvider(script=[FakeTurn(text="The database is probably just slow today.")])
-    if case.case_id == "dev-model-timeout":
-        return FakeProvider(script=[FakeTurn(raise_=ProviderTimeout())])
-    return FakeProvider(script=[FakeTurn(text=VALID_DIAGNOSIS)])
-
-
-class PendingApprovalGateway:
-    """摸底用的审批网关替身。
-
-    永远返回 PENDING：dev-write-awaits-approval 要验证的是「等人决策时挂起」，
-    自动批准会把这个 case 变成「审批通过后执行」，那是另一件事。
-    真实跨服务审批在 drill-m4.py 里测。
-
-    刻意没有 approve 方法——与真实网关一致（M0 INV-4）。
-    """
-
-    def __init__(self) -> None:
-        self._tool_name = ""
-        self._resource_ref = ""
-        self._digest = ""
-
-    async def request(self, *, run_id, tool_name, resource_ref, arguments) -> str:
-        from agent_runtime.approval.digest import digest as digest_fn
-
-        self._tool_name = tool_name
-        self._resource_ref = resource_ref
-        self._digest = digest_fn(arguments)
-        return f"apr-{run_id}"
-
-    async def fetch(self, *, approval_id) -> ApprovalFact:
-        return ApprovalFact(
-            approval_id=approval_id,
-            tool_name=self._tool_name,
-            resource_ref=self._resource_ref,
-            arguments_digest=self._digest,
-            decision="PENDING",
-            consumed=False,
-        )
-
-    async def consume(self, *, approval_id, tool_name, resource_ref, arguments) -> bool:
-        return False
-
-
+# ADR-0009 之后的 Diagnosis schema。M5 时的版本缺 conclusion_type 等字段，
+# 在新代码上会落 provider_failure——那是结构化校验的正确行为，不是脚本问题。
+# claims 的 evidence_ids 留空：真实 id 是内容摘要派生的，脚本预知不了。
 async def _prepare_scenario(client: httpx.AsyncClient, case: IncidentCase) -> None:
     await client.post(f"{LAB}/v1/scenarios/stop")
     await client.post(f"{LAB}/v1/actions/reset")
@@ -139,11 +84,13 @@ async def main() -> int:
             print("      docker compose -f deploy/compose/docker-compose.yml up -d synthetic-lab")
             return 1
 
+        # 不传 provider_factory / approval_gateway_factory：用 harness 的默认工厂，
+        # 它按每个 case 的 model_script 与 provider_failure 装配。
+        # 之前这里自带一套 provider_for，会**覆盖** case 声明的模型行为，
+        # 45 个 case 里有 28 个因此失败——脚本的问题，不是产品的问题。
         harness = EvaluationHarness(
-            provider_factory=provider_for,
             retrieval=retrieval,
             config=HarnessConfig(lab_base_url=LAB),
-            approval_gateway_factory=lambda case: PendingApprovalGateway(),
             http_client=client,
         )
 

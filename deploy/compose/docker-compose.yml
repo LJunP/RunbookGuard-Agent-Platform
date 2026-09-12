@@ -76,6 +76,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER:-runbookguard}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-local-dev-only}
       CONTROL_PLANE_PORT: 8080
+      MANAGEMENT_PORT: 9080
       RUNBOOKGUARD_SEED_DEV_DATA: "true"
       # 控制台是独立源，必须显式放行。默认覆盖 compose 的 nginx 与本地 Vite。
       CONSOLE_ALLOWED_ORIGINS: ${CONSOLE_ALLOWED_ORIGINS:-http://127.0.0.1:8081,http://localhost:8081,http://127.0.0.1:5173,http://localhost:5173}
@@ -83,8 +84,13 @@ services:
       MANAGEMENT_TRACING_ENABLED: ${MANAGEMENT_TRACING_ENABLED:-true}
     ports:
       - "${CONTROL_PLANE_PORT:-8080}:8080"
+      # 管理端口映射仅供 wait-for-stack 探测；真实部署去掉这一行。
+      - "${MANAGEMENT_PORT:-9080}:9080"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/actuator/health/readiness"]
+      # bash 的 /dev/tcp 探测：镜像里不再装 wget，构建因此完全离线。
+      # 它只证明端口在听，不证明 readiness 组健康——但 Docker 的 healthcheck
+      # 只控制 restart 策略与依赖编排，rbac 级就绪由 wait-for-stack 的 HTTP 探测负责。
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9080' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12

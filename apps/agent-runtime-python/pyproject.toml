@@ -14,6 +14,8 @@ dependencies = [
     "httpx==0.28.1",
     "langgraph==1.2.11",
     "langgraph-checkpoint-sqlite==3.1.1",
+    # 直接 import（checkpoint_persistence.py），不能只靠传递依赖。
+    "aiosqlite==0.22.1",
     # 2.x 是破坏性版本：FastMCP 更名为 MCPServer。见 ADR-0007。
     "mcp==2.1.1",
     # Qdrant 客户端与服务端必须同 major、minor 差不超过 1，否则客户端会警告

@@ -101,6 +101,7 @@ class AgentGraph:
         approvals: ApprovalGateway | None = None,
         action_executor: Any | None = None,
         checkpointer: Any | None = None,
+        checkpoint_sink: Any | None = None,
         safety_rule_hit: bool = False,
         version_incompatible: bool = False,
     ) -> None:
@@ -116,7 +117,18 @@ class AgentGraph:
         from ..approval.digest import digest as _digest
 
         self._digest = _digest
-        self._checkpointer = checkpointer or InMemorySaver()
+        # 显式传入的 checkpointer 优先（测试用）；否则按环境装配——
+        # RUNBOOKGUARD_CHECKPOINT_DB 设置时状态落 sqlite，跨进程可恢复。
+        if checkpointer is not None:
+            self._checkpointer = checkpointer
+        else:
+            from .checkpoint_persistence import build_checkpointer
+
+            self._checkpointer = build_checkpointer(
+                sink=checkpoint_sink,
+                graph_version=self.GRAPH_VERSION,
+                state_schema_version=self.STATE_SCHEMA_VERSION,
+            )
         self._compiled = self._build().compile(checkpointer=self._checkpointer)
 
     # -- 图构造 -----------------------------------------------------------

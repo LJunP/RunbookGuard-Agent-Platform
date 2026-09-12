@@ -9,6 +9,7 @@ import io.runbookguard.controlplane.domain.Role;
 import io.runbookguard.controlplane.domain.RunStep;
 import io.runbookguard.controlplane.messaging.FailureClass;
 import io.runbookguard.controlplane.persistence.ApprovalMapper;
+import io.runbookguard.controlplane.persistence.CheckpointMapper;
 import io.runbookguard.controlplane.persistence.EvidenceReferenceMapper;
 import io.runbookguard.controlplane.persistence.RunStepMapper;
 import io.runbookguard.controlplane.persistence.RunTerminalStateMapper;
@@ -36,20 +37,71 @@ public class TraceService {
     private final EvidenceReferenceMapper evidenceMapper;
     private final ApprovalMapper approvalMapper;
     private final RunTerminalStateMapper terminalMapper;
+    private final CheckpointMapper checkpointMapper;
     private final AgentRunService runService;
     private final AuditService audit;
     private final Clock clock;
 
     public TraceService(RunStepMapper stepMapper, EvidenceReferenceMapper evidenceMapper,
                         ApprovalMapper approvalMapper, RunTerminalStateMapper terminalMapper,
-                        AgentRunService runService, AuditService audit, Clock clock) {
+                        CheckpointMapper checkpointMapper, AgentRunService runService,
+                        AuditService audit, Clock clock) {
         this.stepMapper = stepMapper;
         this.evidenceMapper = evidenceMapper;
         this.approvalMapper = approvalMapper;
         this.terminalMapper = terminalMapper;
+        this.checkpointMapper = checkpointMapper;
         this.runService = runService;
         this.audit = audit;
         this.clock = clock;
+    }
+
+    /**
+     * 记录 checkpoint 元数据（M6 §10 A4 的补全）。
+     *
+     * <p>控制面存的是「写过哪些 checkpoint、摘要是什么」，状态本体在 Runtime 的
+     * checkpointer 里。恢复前核对 stateDigest 能发现「读回的状态被篡改或损坏」，
+     * 只看 id 存在发现不了。幂等：重复上报同一 sequence 会被唯一键跳过。
+     */
+    @Transactional
+    public CheckpointOutcome recordCheckpoints(AuthenticatedCaller caller, String runId,
+                                               List<CheckpointInput> checkpoints) {
+        requireAnyRole(caller, Role.AGENT_RUNTIME, Role.OPERATOR);
+        AgentRun run = runService.get(caller, runId);
+
+        int written = 0;
+        for (CheckpointInput input : checkpoints) {
+            written += checkpointMapper.insertIfAbsent(new io.runbookguard.controlplane.domain.CheckpointMeta(
+                    input.checkpointId(), run.runId(), caller.tenantId(),
+                    input.graphVersion(), input.stateSchemaVersion(), input.sequence(),
+                    input.stateDigest(),
+                    SecretRedactor.redact(input.stateLocation()),
+                    clock.instant()));
+        }
+        audit.allowed(caller.tenantId(), caller.principalId(), "checkpoint.record",
+                "run", runId,
+                "{\"submitted\":%d,\"written\":%d}".formatted(checkpoints.size(), written));
+        return new CheckpointOutcome(checkpoints.size(), written);
+    }
+
+    /** 控制台/运维查看一个 Run 的 checkpoint 元数据。 */
+    @Transactional(readOnly = true)
+    public List<io.runbookguard.controlplane.domain.CheckpointMeta> listCheckpoints(
+            AuthenticatedCaller caller, String runId) {
+        AgentRun run = runService.get(caller, runId);
+        return checkpointMapper.listByRunInTenant(run.runId(), caller.tenantId());
+    }
+
+    public record CheckpointInput(
+            String checkpointId,
+            String graphVersion,
+            String stateSchemaVersion,
+            int sequence,
+            String stateDigest,
+            String stateLocation) {
+    }
+
+    public record CheckpointOutcome(int submitted, int written) {
     }
 
     /**

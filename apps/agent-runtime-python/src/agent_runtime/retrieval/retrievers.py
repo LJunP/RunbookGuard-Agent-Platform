@@ -407,8 +407,19 @@ class HybridRetriever:
         fused: dict[str, dict[str, Any]] = {}
         contributing: set[str] = set()
 
+        import time as _time
+
+        from .. import observability as obs
+
         for retriever in self._retrievers:
+            stage_started = _time.perf_counter()
             hits = retriever.search(query, tenant_id=tenant_id, service=service, top_k=fetch)
+            # 按阶段计时：说明书 §16 的检索指标此前只有总延迟，出现问题时
+            # 无法区分是 BM25 慢、向量查询慢还是融合慢。retriever.name 就是阶段名
+            # （lexical / hybrid 的子检索器各有名字），不加新维度。
+            obs.retrieval_stage_latency.labels(retriever.name).observe(
+                _time.perf_counter() - stage_started
+            )
             if hits:
                 contributing.add(retriever.name)
             for rank, scored in enumerate(hits, start=1):

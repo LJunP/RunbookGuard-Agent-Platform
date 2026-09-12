@@ -72,9 +72,23 @@ retrieval_queries = Counter(
     ("hit",),
 )
 
+checkpoint_metadata_failures = Counter(
+    "runbookguard_checkpoint_metadata_failures_total",
+    "Failed checkpoint metadata uploads to the control plane. "
+    "静默丢元数据会让 digest 核对变成摆设，因此失败必须可见。",
+)
+
 retrieval_latency = Histogram(
     "runbookguard_retrieval_duration_seconds",
     "Runbook retrieval duration.",
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5),
+)
+
+retrieval_stage_latency = Histogram(
+    "runbookguard_retrieval_stage_duration_seconds",
+    "Per-sub-retriever latency inside the hybrid pipeline (lexical / vector). "
+    "总延迟只回答「检索慢」，这一组回答「哪一段慢」。",
+    ("stage",),
     buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5),
 )
 

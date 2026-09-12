@@ -127,6 +127,10 @@ class RunTrace:
     evidence: list[TraceEvidence]
     diagnosis: dict[str, Any] | None
     awaiting_approval_id: str | None = None
+    # 关联的 OTel trace id（M6 §10 A6 的「关系设计」部分）。
+    # 只存 id 不存 span：span 归观测栈，Trace 归审计，两边通过 id 互查。
+    # 不进 digest——trace_id 每次运行必然不同，与 run_id 同理。
+    otel_trace_id: str | None = None
     # 冻结配置的指纹。Replay 比对前必须先确认两次跑的是同一套配置——
     # 配置不同而 trace 不同是正常的，那不是不确定性。
     config_fingerprint: str = ""
@@ -143,6 +147,7 @@ class RunTrace:
             "terminal_state": self.terminal_state,
             "failure_class": self.failure_class,
             "awaiting_approval_id": self.awaiting_approval_id,
+            "otel_trace_id": self.otel_trace_id,
             "steps": [s.as_dict() for s in self.steps],
             "evidence": [e.as_dict() for e in self.evidence],
             "diagnosis": _redact_payload(self.diagnosis),
@@ -220,9 +225,31 @@ class RunTrace:
             ],
             diagnosis=raw.get("diagnosis"),
             awaiting_approval_id=raw.get("awaiting_approval_id"),
+            otel_trace_id=raw.get("otel_trace_id"),
             config_fingerprint=raw.get("config_fingerprint", ""),
             recorded_at=raw.get("recorded_at", ""),
         )
+
+
+def current_otel_trace_id() -> str | None:
+    """取当前活跃 span 的 trace id。
+
+    没有 tracer（评测脚本、单测）时返回 None 而不是抛异常——
+    Trace 的价值不依赖观测栈的存在。
+    """
+    try:
+        from opentelemetry import trace
+
+        span = trace.get_current_span()
+        ctx = span.get_span_context()
+        if ctx.is_valid:
+            return format(ctx.trace_id, "032x")
+    except ImportError:
+        pass
+    except Exception:  # noqa: BLE001
+        # 观测故障不能阻断 Trace 生成。
+        pass
+    return None
 
 
 def trace_from_outcome(
@@ -231,7 +258,10 @@ def trace_from_outcome(
     run_id: str,
     outcome: LoopOutcome,
     config_fingerprint: str = "",
+    otel_trace_id: str | None = None,
 ) -> RunTrace:
+    if otel_trace_id is None:
+        otel_trace_id = current_otel_trace_id()
     return RunTrace(
         run_id=run_id,
         case_id=case_id,
@@ -263,6 +293,7 @@ def trace_from_outcome(
         diagnosis=outcome.diagnosis,
         awaiting_approval_id=outcome.awaiting_approval_id,
         config_fingerprint=config_fingerprint,
+        otel_trace_id=otel_trace_id,
     )
 
 

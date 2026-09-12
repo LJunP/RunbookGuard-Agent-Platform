@@ -7,6 +7,9 @@
 set -u
 
 CONTROL_PLANE="${CONTROL_PLANE:-http://127.0.0.1:8080}"
+# actuator 在独立管理端口（M7 §7.5 整改）。就绪探测必须走它——
+# 业务端口上已经没有 /actuator 了。
+MANAGEMENT="${MANAGEMENT:-http://127.0.0.1:9080}"
 AGENT_RUNTIME="${AGENT_RUNTIME:-http://127.0.0.1:8100}"
 SYNTHETIC_LAB="${SYNTHETIC_LAB:-http://127.0.0.1:8090}"
 CONSOLE="${CONSOLE:-http://127.0.0.1:8081}"
@@ -34,7 +37,7 @@ wait_for() {
 }
 
 echo "== 等待全栈就绪（每项最多 ${TIMEOUT}s）=="
-wait_for "control-plane" "${CONTROL_PLANE}/actuator/health/readiness"
+wait_for "control-plane" "${MANAGEMENT}/actuator/health/readiness"
 wait_for "agent-runtime" "${AGENT_RUNTIME}/health"
 wait_for "synthetic-lab" "${SYNTHETIC_LAB}/health"
 wait_for "console" "${CONSOLE}/index.html"

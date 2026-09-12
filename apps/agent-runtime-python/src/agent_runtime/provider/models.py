@@ -64,6 +64,33 @@ class ProviderConfig:
             raise ValueError("base_url is required")
         if self.max_attempts < 1:
             raise ValueError("max_attempts must be >= 1")
+        self._fail_closed_on_unknown_pricing()
+
+    def _fail_closed_on_unknown_pricing(self) -> None:
+        """配了成本预算但模型不在计价表里 → 拒绝构造。
+
+        这曾是 M8 报告 §6 列出的头号缺口：计价表查不到时 cost_micros 恒为 0，
+        cost_budget_exceeded 这条终止条件**看起来在工作、实际永远不触发**——
+        一个静默失效的安全机制比没有更糟。fail-closed 的意思是：
+        要么把模型加进计价表，要么显式承认预算不可执行（escape hatch）。
+        """
+        if self.max_cost_micros <= 0 or self.pricing_known():
+            return
+        import os
+
+        if os.environ.get("RUNBOOKGUARD_ALLOW_UNKNOWN_PRICING", "").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+        }:
+            return
+        raise ValueError(
+            f"cost budget is configured (max_cost_micros={self.max_cost_micros}) but "
+            f"model {self.model!r} has no price entry, so cost would be recorded as 0 "
+            "and the budget would never terminate a run. Add the model to "
+            "provider/pricing.py, or set RUNBOOKGUARD_ALLOW_UNKNOWN_PRICING=1 "
+            "to accept an unenforceable budget."
+        )
 
     def __repr__(self) -> str:
         """api_key 绝不出现在 repr 中——repr 会进日志与异常信息。"""

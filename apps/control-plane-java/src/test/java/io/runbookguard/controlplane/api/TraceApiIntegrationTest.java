@@ -224,6 +224,85 @@ class TraceApiIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("checkpoint 元数据：上报、幂等、读回")
+    void checkpointMetadataRoundTrip() throws Exception {
+        CallerWithToken runtime = callerWithToken(tenantA, "AGENT_RUNTIME,OPERATOR");
+        String runId = createRun(runtime);
+        String digest = "c".repeat(64);
+
+        String req = json.writeValueAsString(Map.of(
+                "graphVersion", "langgraph-v1",
+                "stateSchemaVersion", "1",
+                "checkpoints", List.of(
+                        Map.of("checkpointId", "ckpt-0001", "sequence", 1,
+                                "stateDigest", digest, "stateLocation", "sqlite://checkpoints.db"),
+                        Map.of("checkpointId", "ckpt-0002", "sequence", 2,
+                                "stateDigest", digest))));
+
+        mvc.perform(post("/api/v1/runs/" + runId + "/checkpoints")
+                        .header("Authorization", bearer(runtime))
+                        .contentType(MediaType.APPLICATION_JSON).content(req))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.submitted").value(2))
+                .andExpect(jsonPath("$.written").value(2));
+
+        // 重投：幂等跳过。submitted 与 written 不等使重投可观测。
+        mvc.perform(post("/api/v1/runs/" + runId + "/checkpoints")
+                        .header("Authorization", bearer(runtime))
+                        .contentType(MediaType.APPLICATION_JSON).content(req))
+                .andExpect(jsonPath("$.submitted").value(2))
+                .andExpect(jsonPath("$.written").value(0));
+
+        mvc.perform(get("/api/v1/runs/" + runId + "/checkpoints")
+                        .header("Authorization", bearer(runtime)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].checkpointId").value("ckpt-0001"))
+                .andExpect(jsonPath("$[0].graphVersion").value("langgraph-v1"))
+                .andExpect(jsonPath("$[1].sequence").value(2));
+    }
+
+    @Test
+    @DisplayName("checkpoint 元数据：跨租户 404，VIEWER 不能写")
+    void checkpointMetadataAccessControl() throws Exception {
+        CallerWithToken owner = callerWithToken(tenantA, "AGENT_RUNTIME,OPERATOR");
+        String runId = createRun(owner);
+        CallerWithToken intruder = callerWithToken(tenantB, "AGENT_RUNTIME");
+        CallerWithToken viewer = callerWithToken(tenantA, "VIEWER");
+
+        // 带一条合法条目：@NotEmpty 会先于 RBAC 拦截空列表，
+        // 那样测到的是校验层而不是租户隔离。
+        String oneCkpt = json.writeValueAsString(Map.of(
+                "graphVersion", "langgraph-v1", "stateSchemaVersion", "1",
+                "checkpoints", List.of(Map.of(
+                        "checkpointId", "ckpt-t", "sequence", 1,
+                        "stateDigest", "d".repeat(64)))));
+
+        mvc.perform(post("/api/v1/runs/" + runId + "/checkpoints")
+                        .header("Authorization", bearer(intruder))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(oneCkpt))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(post("/api/v1/runs/" + runId + "/checkpoints")
+                        .header("Authorization", bearer(viewer))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(oneCkpt))
+                .andExpect(status().isForbidden());
+
+        // stateDigest 长度错误 -> 400
+        mvc.perform(post("/api/v1/runs/" + runId + "/checkpoints")
+                        .header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of(
+                                "graphVersion", "langgraph-v1", "stateSchemaVersion", "1",
+                                "checkpoints", List.of(Map.of(
+                                        "checkpointId", "ckpt-x", "sequence", 1,
+                                        "stateDigest", "short"))))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("Trace 含终态与审批链路")
     void traceIncludesTerminalStateAndApprovals() throws Exception {
         CallerWithToken runtime = callerWithToken(tenantA, "AGENT_RUNTIME,OPERATOR");

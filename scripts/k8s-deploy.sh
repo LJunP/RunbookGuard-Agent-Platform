@@ -104,7 +104,8 @@ cat <<MSG
 
 ok    部署完成。
 
-      控制面   http://127.0.0.1:30080/actuator/health
+      控制面   http://127.0.0.1:30080/api/v1/incidents  （无凭据 401 即正常）
+      管理口   Pod 内 9080（未映射宿主机；actuator 不对外）
       控制台   http://127.0.0.1:30081
 
       演练：bash scripts/drill-m8.sh ${CONTEXT}

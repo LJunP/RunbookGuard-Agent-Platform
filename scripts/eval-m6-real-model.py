@@ -169,16 +169,21 @@ async def main() -> int:
     model_id = os.environ["RUNBOOKGUARD_LLM_MODEL"]
     pricing = lookup_pricing(model_id)
     if pricing is None:
-        # 不猜价格：成本记为 0 并在报告里标注未知（pricing.py 的约定）。
-        print(f"WARN  {model_id} 不在计价表里，成本将记为 0 并标注 UNKNOWN。")
+        # fail-closed（M8 §6 头号缺口的整改）：没有计价就配成本预算，预算会
+        # 静默失效。显式拒绝，不 warn-and-continue。
+        print(f"FAIL  {model_id} 不在计价表里。把它加进 provider/pricing.py，")
+        print(
+            "      或设 RUNBOOKGUARD_ALLOW_UNKNOWN_PRICING=1 显式承认成本预算不可执行。"
+        )
+        return 1
     config = ProviderConfig(
         base_url=os.environ["RUNBOOKGUARD_LLM_BASE_URL"],
         model=model_id,
         api_key=os.environ["RUNBOOKGUARD_LLM_API_KEY"],
         max_calls=MAX_CALLS,
         max_cost_micros=MAX_COST_MICROS,
-        price_per_1k_prompt_micros=pricing.prompt_micros_per_1k if pricing else 0,
-        price_per_1k_completion_micros=pricing.completion_micros_per_1k if pricing else 0,
+        price_per_1k_prompt_micros=pricing.prompt_micros_per_1k,
+        price_per_1k_completion_micros=pricing.completion_micros_per_1k,
         timeout_seconds=90.0,
     )
     print(f"provider: {config!r}")
@@ -287,9 +292,7 @@ async def main() -> int:
         "budget": {"max_calls": MAX_CALLS, "max_cost_micros": MAX_COST_MICROS},
         "usage": {
             "calls": provider.calls_made,
-            "cost_micros_list_price": (
-                provider.cost_micros_spent if pricing else "UNKNOWN (model not in pricing table)"
-            ),
+            "cost_micros_list_price": provider.cost_micros_spent,
         },
         "errors": errors,
         "report": report.as_dict(),

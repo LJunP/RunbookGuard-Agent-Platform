@@ -169,7 +169,10 @@ spec:
           image: runbookguard/control-plane:local
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - name: business
+              containerPort: 8080
+            - name: management
+              containerPort: 9080
           envFrom:
             - configMapRef: { name: runbookguard-config }
           env:
@@ -211,20 +214,20 @@ spec:
           # startupProbe 的 failureThreshold 必须覆盖它，否则 liveness 会在
           # 应用还没起来时就开始杀它。
           startupProbe:
-            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            httpGet: { path: /actuator/health/readiness, port: 9080 }
             periodSeconds: 5
             failureThreshold: 36
           readinessProbe:
             # readiness 用 readiness 组：它包含数据库连通性，
             # 数据库断开时应当停止接流量。
-            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            httpGet: { path: /actuator/health/readiness, port: 9080 }
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             # liveness 用 liveness 组：它**不含**外部依赖。
             # 用 readiness 组做 liveness 会让一次数据库抖动导致全部副本被重启，
             # 那是把可恢复的依赖故障放大成自身故障。
-            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            httpGet: { path: /actuator/health/liveness, port: 9080 }
             periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 6

@@ -40,6 +40,13 @@ mybatis:
     map-underscore-to-camel-case: true
 
 management:
+  # actuator 独立端口（M7 §7.5 整改）。业务端口只服务 /api/**，
+  # /actuator/**（含无鉴权的 /actuator/prometheus）只绑定在管理端口上。
+  # 分离后：NodePort / Ingress 只可能暴露业务端口，攻击者即使拿到业务口的
+  # 访问权也读不到指标端点。管理端口不应做宿主机映射——compose 里映射它
+  # 只是为了 wait-for-stack 探测，真实部署应去掉。
+  server:
+    port: ${MANAGEMENT_PORT:9080}
   endpoints:
     web:
       exposure:

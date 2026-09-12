@@ -75,6 +75,10 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+        # kubelet 的探针走管理端口。它没有 NodePort/Service，
+        # 因此集群外仍无法触达；这条规则只为探针放行。
+        - protocol: TCP
+          port: 9080
   egress:
     - to:
         - podSelector:

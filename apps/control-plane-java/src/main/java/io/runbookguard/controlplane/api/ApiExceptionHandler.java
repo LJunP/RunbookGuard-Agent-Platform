@@ -105,6 +105,19 @@ public class ApiExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, "invalid_request", e.getMessage());
     }
 
+    /**
+     * 未匹配路径在 Spring 6.1+ 抛 NoResourceFoundException。
+     *
+     * <p>必须先于 Exception 兜底接住，否则打错路径一律 500——调用方会以为
+     * 控制面坏了而不是路径错了，监控的 5xx 告警也会被这类噪音淹没
+     * （M7 冒烟验证端口分离时就撞上了：/actuator 在业务口返回 500 而非 404）。
+     */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> onNoResource(
+            org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        return body(HttpStatus.NOT_FOUND, "not_found", "no such path");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> onUnexpected(Exception e) {
         log.error("unhandled exception", e);

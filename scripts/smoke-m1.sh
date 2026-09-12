@@ -38,7 +38,9 @@ jsonfield() {
 }
 
 echo "== 健康与认证 =="
-check "健康检查无需认证" 200 "$BASE/actuator/health"
+# actuator 在独立管理端口（M7 §7.5 整改）；业务口只服务 /api/**。
+MGMT="${MGMT:-http://127.0.0.1:9080}"
+check "健康检查无需认证（管理端口）" 200 "$MGMT/actuator/health"
 check "无凭据访问 -> 401" 401 "$BASE/api/v1/incidents"
 check "伪造 token -> 401" 401 -H "Authorization: Bearer forged" "$BASE/api/v1/incidents"
 

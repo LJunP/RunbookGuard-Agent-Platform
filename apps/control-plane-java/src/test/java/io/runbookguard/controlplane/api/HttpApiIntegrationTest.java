@@ -50,6 +50,16 @@ class HttpApiIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("不存在的路径 -> 404 not_found，而不是 500")
+    void unknownPathYields404() throws Exception {
+        // @ExceptionHandler(Exception.class) 会把 NoResourceFoundException 吞成
+        // internal_error。5xx 告警被「打错路径」淹没，与控制面真的坏了无法区分。
+        mvc.perform(get("/no-such-path-at-all"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("not_found"));
+    }
+
+    @Test
     @DisplayName("伪造 token -> 401")
     void invalidTokenYields401() throws Exception {
         mvc.perform(get("/api/v1/incidents").header("Authorization", "Bearer forged-token"))
@@ -298,9 +308,12 @@ class HttpApiIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("健康检查无需认证")
-    void healthEndpointIsOpen() throws Exception {
-        mvc.perform(get("/actuator/health")).andExpect(status().isOk());
+    @DisplayName("actuator 已迁到管理端口：业务口上 /actuator 返回 404")
+    void actuatorIsNotOnBusinessPort() throws Exception {
+        // M7 §7.5 整改：management.server.port 分离后，主 servlet 不再挂 actuator。
+        // 管理口本身的 200 由 compose 冒烟（scripts/smoke-m7.sh）验证——MockMvc
+        // 只绑主端口的 servlet，测不到 9080。
+        mvc.perform(get("/actuator/health")).andExpect(status().isNotFound());
     }
 
     private String createIncident(CallerWithToken caller) throws Exception {

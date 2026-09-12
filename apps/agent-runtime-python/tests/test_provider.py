@@ -703,3 +703,63 @@ class TestPricing:
         note = lookup("glm-5.3-flash").note
         assert "缓存" in note
         assert "高估" in note
+
+
+class TestPricingFailClosed:
+    """M8 报告 §6 头号缺口的整改。
+
+    计价表查不到时 cost_micros 恒为 0。若同时配了成本预算，
+    cost_budget_exceeded 这条终止条件看起来在工作、实际永远不触发——
+    一个静默失效的安全机制比没有更糟。
+    """
+
+    def _config(self, *, max_cost: int, priced: bool):
+        from agent_runtime.provider.models import ProviderConfig
+
+        return ProviderConfig(
+            base_url="http://gw.test/v1",
+            model="glm-5.3-flash" if priced else "some-unknown-model",
+            max_cost_micros=max_cost,
+            price_per_1k_prompt_micros=800 if priced else 0,
+            price_per_1k_completion_micros=2800 if priced else 0,
+        )
+
+    def test_budget_with_unknown_model_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match="never terminate a run"):
+            self._config(max_cost=100_000, priced=False)
+
+    def test_budget_with_known_model_is_accepted(self) -> None:
+        assert self._config(max_cost=100_000, priced=True) is not None
+
+    def test_no_budget_with_unknown_model_is_accepted(self) -> None:
+        """没配预算就没有「预算会静默失效」的问题，允许构造。"""
+        assert self._config(max_cost=0, priced=False) is not None
+
+    def test_explicit_override_accepts_unenforceable_budget(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """escape hatch 必须是显式的：承认预算不可执行是运维决定，
+        不是默认行为。"""
+        monkeypatch.setenv("RUNBOOKGUARD_ALLOW_UNKNOWN_PRICING", "1")
+        assert self._config(max_cost=100_000, priced=False) is not None
+
+    def test_override_is_off_by_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("RUNBOOKGUARD_ALLOW_UNKNOWN_PRICING", raising=False)
+        with pytest.raises(ValueError):
+            self._config(max_cost=100_000, priced=False)
+
+    def test_from_env_with_budget_and_unknown_model_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """从环境变量装配的路径同样要 fail-closed——工厂与脚本绕不过它。"""
+        from agent_runtime.provider.models import ProviderConfig
+
+        monkeypatch.setenv("RUNBOOKGUARD_LLM_BASE_URL", "http://gw.test/v1")
+        monkeypatch.setenv("RUNBOOKGUARD_LLM_MODEL", "never-heard-of-it")
+        monkeypatch.setenv("RUNBOOKGUARD_LLM_API_KEY", "sk-test")
+        # from_env 的 env() 会拼上 prefix，因此键名是完整的前缀形式。
+        monkeypatch.setenv("RUNBOOKGUARD_LLM_MAX_COST_MICROS", "50000")
+        with pytest.raises(ValueError, match="no price entry"):
+            # from_env 里的 env() 读的是 prefix 之后的键名（BASE_URL / MODEL / …），
+            # 而 MAX_COST_MICROS 是从 prefix 之后读的（MAX_COST_MICROS）。
+            ProviderConfig.from_env()

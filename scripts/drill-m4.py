@@ -41,6 +41,8 @@ from agent_runtime.tools.executor import ReadOnlyToolExecutor  # noqa: E402
 from agent_runtime.tools.policy import PolicyEngine  # noqa: E402
 
 CP = "http://127.0.0.1:8080"
+# actuator 在独立管理端口（M7 §7.5 整改）。
+CP_MGMT = "http://127.0.0.1:9080"
 LAB = "http://127.0.0.1:8090"
 
 OPERATOR = "dev-operator-token"
@@ -520,7 +522,8 @@ async def drill_8_audit_trail(client: httpx.AsyncClient) -> None:
 async def main() -> int:
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
-            health = await client.get(f"{CP}/actuator/health")
+            # actuator 已迁到独立管理端口（M7 §7.5 整改），业务口上没有它了。
+            health = await client.get(f"{CP_MGMT}/actuator/health")
             lab_health = await client.get(f"{LAB}/health")
         except httpx.HTTPError as exc:
             print(f"FAIL  前置检查：栈未就绪 {exc}")

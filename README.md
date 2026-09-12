@@ -60,7 +60,7 @@ docker compose -f deploy/compose/docker-compose.yml up -d --build
 # 2. 等就绪
 bash scripts/wait-for-stack.sh
 
-# 3. 冒烟（29 项检查：CORS / RBAC / 审批链路 / 观测接线 / trace 导出）
+# 3. 冒烟（30 项检查：CORS / RBAC / 审批链路 / 观测接线 / trace 导出 / actuator 端口分离）
 bash scripts/smoke-m7.sh
 ```
 
@@ -77,6 +77,8 @@ bash scripts/smoke-m7.sh
 | RabbitMQ 管理台 | [http://127.0.0.1:15673](http://127.0.0.1:15673) | `runbookguard` / `local-dev-only` |
 
 清理：`docker compose -f deploy/compose/docker-compose.yml down -v`
+
+凭据模板：复制 `.env.example` 为 `.env` 再填值（`.env` 已被 gitignore 屏蔽）。模型不在计价表里时若配置了成本预算，启动会被拒绝——把模型加进 `pricing.py` 或显式设 `RUNBOOKGUARD_ALLOW_UNKNOWN_PRICING=1`。
 
 ### 本地演示凭据
 
@@ -198,10 +200,10 @@ docker compose -f deploy/compose/docker-compose.yml up -d agent-runtime
 ## 各语言测试
 
 ```bash
-# Java：152 个测试，Testcontainers 起真实 MySQL/Redis/RabbitMQ，不用 mock
+# Java：155 个测试，Testcontainers 起真实 MySQL/Redis/RabbitMQ，不用 mock
 cd apps/control-plane-java && mvn test
 
-# Python Agent Runtime：565 个测试（含 25 个跑真实子进程的沙箱测试，约 50s）
+# Python Agent Runtime：592 个测试（含沙箱与 checkpoint 持久化的真实子进程测试，约 50s）
 cd apps/agent-runtime-python && pip install -e ".[dev]" && python -m pytest -q
 
 # Synthetic Lab：35 个测试
@@ -219,7 +221,7 @@ CI 把这些拆成 6 条独立 job（Java / Python / Console / 跨语言契约 /
 
 | 脚本 | 用途 |
 |---|---|
-| `scripts/smoke-m7.sh` | M7 冒烟：29 项接线检查 |
+| `scripts/smoke-m7.sh` | M7 冒烟：30 项接线检查 |
 | `scripts/wait-for-stack.sh` | 等全栈就绪 |
 | `scripts/drill-m2.sh` | Worker kill -9 与消息重投演练 |
 | `scripts/drill-m4.py` | 审批、篡改参数、跨进程恢复演练（43 项） |
@@ -244,6 +246,7 @@ CI 把这些拆成 6 条独立 job（Java / Python / Console / 跨语言契约 /
 | [M1](docs/architecture/M1-gate-report.md) … [M8](docs/architecture/M8-gate-report.md) Gate 报告 | 每份含真实运行输出、Gate 逐条自评、**实际踩到的问题**、已知限制 |
 | [vLLM 与模型网关边界](docs/architecture/M8-model-gateway-and-vllm-boundary.md) | 三层职责、客户端契约。**无任何性能验证**（没有 GPU） |
 | [ADR-0001](docs/adr/ADR-0001-scope-freeze-and-spec-conflicts.md) … [ADR-0010](docs/adr/ADR-0010-action-sandbox-and-k8s-boundary.md) | 10 份决策记录，含当日核验结果 |
+| [整改审计报告](docs/architecture/remediation-audit-20260912.md) | M8 后的系统审计：13 项发现的处置结果 |
 | [开发主提示词](docs/DEV_PROMPT.md) | 开发契约（五条铁律、里程碑与 Gate 定义） |
 
 Gate 报告里的「实际踩到的问题」一节值得优先读：它记录了单测全绿而容器崩溃、判据存在但结构上永不触发、防御条件写反方向这几类缺陷，以及各自只有什么手段能发现。

@@ -16,6 +16,7 @@ CONSOLE="${CONSOLE:-http://127.0.0.1:8081}"
 PROMETHEUS="${PROMETHEUS:-http://127.0.0.1:9090}"
 GRAFANA="${GRAFANA:-http://127.0.0.1:3000}"
 CONSOLE_ORIGIN="${CONSOLE_ORIGIN:-http://127.0.0.1:8081}"
+MANAGEMENT="${MANAGEMENT:-http://127.0.0.1:9080}"
 
 OPERATOR_TOKEN="${OPERATOR_TOKEN:-dev-operator-token}"
 APPROVER_TOKEN="${APPROVER_TOKEN:-dev-approver-token}"
@@ -53,8 +54,11 @@ print(data if data is not None else '')
 }
 
 echo "== 1. 服务可达 =="
-check "control-plane readiness" \
-  "$([ "$(curl -s -o /dev/null -w '%{http_code}' "${CONTROL_PLANE}/actuator/health/readiness")" = 200 ] && echo 1 || echo 0)"
+check "control-plane readiness（管理端口）" \
+  "$([ "$(curl -s -o /dev/null -w '%{http_code}' "${MANAGEMENT}/actuator/health/readiness")" = 200 ] && echo 1 || echo 0)"
+# 业务端口上 actuator 必须不复存在——这是端口分离的意义所在。
+check "业务端口不再暴露 actuator" \
+  "$([ "$(curl -s -o /dev/null -w '%{http_code}' "${CONTROL_PLANE}/actuator/health")" = 404 ] && echo 1 || echo 0)"
 check "agent-runtime health" \
   "$([ "$(curl -s -o /dev/null -w '%{http_code}' "${AGENT_RUNTIME}/health")" = 200 ] && echo 1 || echo 0)"
 check "synthetic-lab health" \
@@ -161,8 +165,8 @@ echo
 echo "== 7. 观测接线 =="
 check "agent-runtime /metrics" \
   "$(curl -s "${AGENT_RUNTIME}/metrics" | grep -q 'runbookguard_http_requests_total' && echo 1 || echo 0)"
-check "control-plane /actuator/prometheus" \
-  "$(curl -s "${CONTROL_PLANE}/actuator/prometheus" | grep -q 'http_server_requests_seconds' && echo 1 || echo 0)"
+check "control-plane /actuator/prometheus（管理端口）" \
+  "$(curl -s "${MANAGEMENT}/actuator/prometheus" | grep -q 'http_server_requests_seconds' && echo 1 || echo 0)"
 check "synthetic-lab /metrics" \
   "$(curl -s "${SYNTHETIC_LAB}/metrics" | grep -q 'synthetic_lab_requests_total' && echo 1 || echo 0)"
 

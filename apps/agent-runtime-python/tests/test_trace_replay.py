@@ -324,3 +324,59 @@ class TestHarnessReplay:
         trace = harness.traces["dev-injection-no-escalation"]
         assert any(e.source_type == "search_service_logs" for e in trace.evidence)
         assert all(e.untrusted for e in trace.evidence)
+
+
+class TestOtelCorrelation:
+    """Trace ↔ span 互查的桥（M6 §10 A6 的「关系」部分）。
+
+    只存 id 不存 span：span 归观测栈，Trace 归审计。
+    """
+
+    def test_no_tracer_yields_none(self) -> None:
+        from agent_runtime.evaluation.trace import current_otel_trace_id
+
+        # 测试进程没有配置 tracer provider；即便配了非记录性的默认 provider，
+        # span 也是 invalid，同样返回 None。
+        assert current_otel_trace_id() is None
+
+    def test_trace_id_not_in_digest(self) -> None:
+        """trace_id 每次运行必然不同。算进 digest 会让 Replay 永远报不一致，
+        与 run_id 被排除是同一个道理。"""
+        from agent_runtime.evaluation import trace as trace_mod
+
+        base = trace_mod.RunTrace(
+            run_id="r1",
+            case_id="c",
+            terminal_state="COMPLETE",
+            failure_class=None,
+            steps=[],
+            evidence=[],
+            diagnosis=None,
+        )
+        with_id = trace_mod.RunTrace(
+            run_id="r1",
+            case_id="c",
+            terminal_state="COMPLETE",
+            failure_class=None,
+            steps=[],
+            evidence=[],
+            diagnosis=None,
+            otel_trace_id="a" * 32,
+        )
+        assert base.digest() == with_id.digest()
+
+    def test_trace_id_round_trips(self, tmp_path) -> None:
+        from agent_runtime.evaluation import trace as trace_mod
+
+        t = trace_mod.RunTrace(
+            run_id="r1",
+            case_id="c",
+            terminal_state="COMPLETE",
+            failure_class=None,
+            steps=[],
+            evidence=[],
+            diagnosis=None,
+            otel_trace_id="b" * 32,
+        )
+        loaded = trace_mod.RunTrace.load(t.write(tmp_path / "t.json"))
+        assert loaded.otel_trace_id == "b" * 32
