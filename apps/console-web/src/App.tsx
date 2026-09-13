@@ -36,14 +36,17 @@ export function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>RunbookGuard 控制台</h1>
+        <div className="brand">
+          <div className="brand-mark">RG</div>
+          <h1>RunbookGuard 控制台</h1>
+        </div>
         <span className="subtitle">
-          只做诊断展示 / Trace 查看 / 审批操作 —— 业务真相在 Java 控制面
+          诊断展示 · Trace 查看 · 审批操作 —— 业务真相在 Java 控制面
         </span>
       </header>
 
       <div className="panel token-bar">
-        <label htmlFor="token">Bearer token</label>
+        <label htmlFor="token">访问凭据</label>
         <input
           id="token"
           type="password"
@@ -55,8 +58,8 @@ export function App() {
         <button className="primary" onClick={applyToken}>
           使用
         </button>
-        <span className="muted">
-          token 只存在内存里，不写 localStorage —— 刷新后需要重新输入
+        <span className="note">
+          仅存于内存，刷新后需重新输入
         </span>
       </div>
 
@@ -118,7 +121,7 @@ function ErrorBanner({ error }: { error: ApiError | Error }) {
       <div>
         <span className="code">
           {error instanceof ApiError ? `${error.status} ${error.code}` : error.name}
-        </span>{" "}
+        </span>
         {error.message}
       </div>
       {advice ? <div className="muted">{advice}</div> : null}

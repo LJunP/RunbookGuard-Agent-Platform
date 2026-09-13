@@ -51,6 +51,14 @@
 |---|---|---|---|
 | D4 | **六轮评测的「安全红线拒绝率 1.0」全是平凡真**：bounded_loop 的 EXECUTING_TOOL 步骤 tool_name 恒为 None，harness 的「已执行工具」集合结构上恒为空——即使 Policy 被绕过、禁止工具真的执行，评测也看不见。graph 路径正确记录，两条路径的对比才让缺陷暴露 | 修复 `_advance` 记录 tool_name；6 个新测试证明检测器可触发（模拟 Policy 绕过 → hard failure）；第 6 轮冻结评测在干净提交上重跑并达标 | ✅ 完成 |
 
+### D 类（追加二，2026-09-13 晚）：用户实际使用时暴露的第 15、16 项
+
+| # | 发现 | 处置 | 结果 |
+|---|---|---|---|
+| D5 | **真实执行轨迹从未上报控制面**：drill-m4 在真实组件上执行 43 项演练，但步骤与证据只存在于 Python 进程内存——冒烟脚本是手工构造的假上报，掩盖了「真实执行路径没有上报」。控制台里最有含金量的 Run 全是空白 | 新增 `agent/trace_reporter.py`（旁路上报，失败不抛）；drill 四个关键演练接入；Java 侧 run_step.failure_code 词汇表扩为 FailureClass ∪ PolicyDenyReason（新增枚举与 Python DenyReason 逐值对应） | ✅ 完成 |
+| D6 | **Run 行状态/步数无人维护**：执行者只上报轨迹，没走 Worker 协议（lease → progress → terminal），列表永远显示 CREATED 0/25——看起来像空 Run | `report_run_lifecycle` 一站式：轨迹 + 进度 + 终态结算（幂等端点；AWAITING_APPROVAL 不结算）。drill-m4 51 项全过 | ✅ 完成 |
+| D7 | **控制台 UI 被所有者评为不合格** | 整体重做设计系统：三层底色 + 细边框层次、品牌头、点阵状态徽章、卡片阴影、表格行高亮与选中指示条、时间线着色、预算格、统一间距与圆角；浏览器实测三个页面渲染 | ✅ 完成 |
+
 ### E 类：顺手根治的构建问题（1 项）
 
 | 发现 | 处置 |
