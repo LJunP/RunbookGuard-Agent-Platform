@@ -500,3 +500,50 @@ class TestExecutorGuards:
         )
         with pytest.raises(AssertionError, match="write tool"):
             await ReadOnlyToolExecutor(LAB).execute(auth)
+
+
+class TestExecutingToolStepRecordsToolName:
+    """「禁止工具被执行」检测能否触发的前提。
+
+    harness 按 step.tool_name 过滤 EXECUTING_TOOL 步骤来统计已执行的工具。
+    此前成功执行的步骤只在 detail 里带工具名、tool_name 字段恒为 None，
+    检测器结构上永不触发——安全红线拒绝率是平凡地等于 1.0
+    （第 4 轮冻结评测的 trace 实证了这一点）。"""
+
+    @respx.mock
+    async def test_successful_execution_carries_tool_name(self) -> None:
+        _mount_lab()
+        async with httpx.AsyncClient() as client:
+            loop = _loop(client=client)
+            outcome = await loop.run(_spec(), [METRICS_CALL])
+        executing = [s for s in outcome.steps if s.node is RunStatus.EXECUTING_TOOL]
+        assert executing, "应有 EXECUTING_TOOL 步骤"
+        assert all(s.tool_name == "get_service_metrics" for s in executing), [
+            (s.sequence, s.tool_name, s.detail) for s in executing
+        ]
+
+    @respx.mock
+    async def test_failed_execution_also_carries_tool_name(self) -> None:
+        """失败分支此前就带 tool_name；修好后两条分支一致。"""
+        _mount_lab()
+        # 覆盖 metrics 路由返回 404：_mount_lab 的桩对任何 metric 都返回 200，
+        # 而失败分支需要一个真的失败的工具调用。
+        respx.get(f"{LAB}/v1/metrics").mock(
+            return_value=httpx.Response(
+                404, json={"error": "unknown_metric", "message": "no such metric"}
+            )
+        )
+        async with httpx.AsyncClient() as client:
+            # 资源合法但指标不存在 → Policy 放行、工具失败（unknown_metric）。
+            # 用 synthetic-unknown 会在 Policy 层就被拒，到不了 EXECUTING_TOOL。
+            loop = _loop(client=client)
+            outcome = await loop.run(
+                _spec(),
+                [ToolSuggestion(
+                    tool_name="get_service_metrics",
+                    arguments={"service": "synthetic-orders", "metric": "no_such_metric"},
+                )],
+            )
+        failed = [s for s in outcome.steps
+                  if s.node is RunStatus.EXECUTING_TOOL and s.failure_code]
+        assert failed and all(s.tool_name == "get_service_metrics" for s in failed)

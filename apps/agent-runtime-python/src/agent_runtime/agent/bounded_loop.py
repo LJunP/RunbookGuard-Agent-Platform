@@ -258,7 +258,13 @@ class BoundedAgentLoop:
                         f"control plane refused to consume approval {approval_id}",
                     )
 
-            self._advance(RunStatus.EXECUTING_TOOL, detail=suggestion.tool_name)
+            # tool_name 必须进步骤记录而不只是 detail：harness 判定「已执行工具」
+            # 按 step.tool_name 过滤。此前它只在失败分支被记录，成功执行的步骤
+            # tool_name 恒为 None —— 「禁止工具被执行」的检测因此结构上永不触发，
+            # 安全红线拒绝率是平凡地等于 1.0（第 4 轮冻结评测的 trace 实证：
+            # 全部 EXECUTING_TOOL 步骤 tool_name 为 None）。
+            self._advance(RunStatus.EXECUTING_TOOL, detail=suggestion.tool_name,
+                          tool_name=suggestion.tool_name)
             self.guard.charge_tool_call()
             try:
                 result = await self.executor.execute(decision.authorization)
@@ -403,11 +409,12 @@ class BoundedAgentLoop:
 
     # -- 状态与记账 -------------------------------------------------------
 
-    def _advance(self, target: RunStatus, *, detail: str = "") -> None:
+    def _advance(self, target: RunStatus, *, detail: str = "",
+                 tool_name: str | None = None) -> None:
         require_transition(self.status, target)
         self.status = target
         self.guard.charge_step()
-        self._record(target, detail=detail)
+        self._record(target, detail=detail, tool_name=tool_name)
 
     def _record(
         self,
