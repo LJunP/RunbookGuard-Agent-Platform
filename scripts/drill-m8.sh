@@ -41,13 +41,32 @@ probe_cp() {
 
 # 后台持续探测，返回非 200 的次数。用于「过程中有没有中断」这类断言——
 # 只在操作前后各探一次会漏掉中间的窗口。
+MAX_POLL_ITER="${MAX_POLL_ITER:-4000}"
+
 poll_until_file() {
+  local outfile="$1" stopfile="$2" n=0
+  if [ -z "$outfile" ] || [ -z "$stopfile" ]; then
+    echo "poll_until_file: empty file argument" >&2
+    return 1
+  fi
   local outfile="$1" stopfile="$2"
   : > "$outfile"
   while [ ! -f "$stopfile" ]; do
+    n=$((n + 1))
+    if [ "$n" -gt "$MAX_POLL_ITER" ]; then
+      echo "poll_until_file: exceeded ${MAX_POLL_ITER} iterations; stopfile never appeared" >&2
+      return 1
+    fi
     printf '%s\n' "$(probe_cp)" >> "$outfile"
     sleep 0.3
   done
+}
+
+# macOS BSD mktemp 与 GNU mktemp 的公共子集：给完整路径模板。
+# GNU（Linux runner）要求模板带 X，BSD（macOS）两者都收——反例见 CI 首跑：
+# mktemp -t 前缀 在 runner 上报 too-few-X，空 stopfile 进死循环烧掉 39 分钟。
+new_tmp() {
+  mktemp "${TMPDIR:-/tmp}/rg-m8-drill.XXXXXX"
 }
 
 echo "========================================"
@@ -175,8 +194,8 @@ $KUBECTL delete namespace np-outside --wait=false >/dev/null 2>&1 || true
 
 echo
 echo "== 4. 演练：删除 Pod（服务不应中断）=="
-STOPFILE="$(mktemp -t rgstop)"; rm -f "$STOPFILE"
-POLLFILE="$(mktemp -t rgpoll)"
+STOPFILE="$(new_tmp)"; [ -n "$STOPFILE" ] || { echo "FAIL mktemp"; exit 1; }; rm -f "$STOPFILE"
+POLLFILE="$(new_tmp)"; [ -n "$POLLFILE" ] || { echo "FAIL mktemp"; exit 1; }
 poll_until_file "$POLLFILE" "$STOPFILE" &
 POLL_PID=$!
 sleep 1
@@ -292,8 +311,8 @@ $KUBECTL -n "$NS" delete pod oom-victim --wait=false >/dev/null 2>&1 || true
 
 echo
 echo "== 9. 演练：滚动发布（过程中零 5xx）=="
-STOPFILE2="$(mktemp -t rgstop2)"; rm -f "$STOPFILE2"
-POLLFILE2="$(mktemp -t rgpoll2)"
+STOPFILE2="$(new_tmp)"; [ -n "$STOPFILE2" ] || { echo "FAIL mktemp"; exit 1; }; rm -f "$STOPFILE2"
+POLLFILE2="$(new_tmp)"; [ -n "$POLLFILE2" ] || { echo "FAIL mktemp"; exit 1; }
 poll_until_file "$POLLFILE2" "$STOPFILE2" &
 POLL_PID2=$!
 sleep 1
