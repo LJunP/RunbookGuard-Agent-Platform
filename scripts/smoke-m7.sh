@@ -172,16 +172,32 @@ check "synthetic-lab /metrics" \
 
 # 目标 up 而不只是「端点能打开」：Prometheus 抓不到目标时面板全空，
 # 而那与「没有流量」的表现完全一样。
-UP_TARGETS="$(curl -s "${PROMETHEUS}/api/v1/query?query=up" | python3 -c "
+# up 的判定必须**等待**而不是查一次：runner 没有 Docker 层缓存，
+# control-plane 相对 Prometheus 启得晚，抓取间隔 15s —— 若在它就绪后、
+# 下一次成功抓取完成前查询，up 仍是 0（第二次 CI 实跑就是这么失败的）。
+# 每个目标最多等 90s。
+wait_for_up() {
+  local job="$1" deadline
+  deadline=$(( $(date +%s) + 90 ))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    if curl -s --get --data-urlencode "query=up{job=\"${job}\"}" "${PROMETHEUS}/api/v1/query" | python3 -c "
 import json,sys
 data = json.load(sys.stdin)
 rows = data.get('data', {}).get('result', [])
-up = [r['metric'].get('job') for r in rows if r['value'][1] == '1']
-print(','.join(sorted(j for j in up if j)))
-" 2>/dev/null)"
+sys.exit(0 if any(r['value'][1] == '1' for r in rows) else 1)
+" 2>/dev/null; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
 for job in control-plane agent-runtime synthetic-lab; do
-  check "Prometheus 抓到 ${job}" \
-    "$(printf '%s' "$UP_TARGETS" | grep -q "$job" && echo 1 || echo 0)" "up=$UP_TARGETS"
+  if wait_for_up "$job"; then
+    check "Prometheus 抓到 ${job}" 1
+  else
+    check "Prometheus 抓到 ${job}" 0 "等了 90s 仍未抓到"
+  fi
 done
 
 check "Grafana 数据源已 provision" \
