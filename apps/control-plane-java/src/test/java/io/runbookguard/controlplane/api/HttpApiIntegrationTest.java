@@ -50,6 +50,32 @@ class HttpApiIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("GET /api/v1/runs?incidentId= 返回该 Incident 的 Run（控制台主流程）")
+    void listRunsByIncidentReturnsCreatedRun() throws Exception {
+        // 回归：listByIncident 的 SQL 曾因 Java 文本块剥掉行尾空格而成为
+        // "SELECTrun_id"，只有控制台点击 Incident 才触发，测试从未覆盖，
+        // 从 M1 坏到 M7（控制台 500）。
+        CallerWithToken operator = callerWithToken(tenantA, "OPERATOR");
+        String incidentId = createIncident(operator);
+
+        mvc.perform(post("/api/v1/runs")
+                        .header("Authorization", bearer(operator))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of(
+                                "incidentId", incidentId, "graphVersion", "langgraph-v1",
+                                "promptVersion", "p1", "modelId", "fake-model",
+                                "datasetVersion", "incidents-dev"))))
+                .andExpect(status().isCreated());
+
+        mvc.perform(get("/api/v1/runs")
+                        .header("Authorization", bearer(operator))
+                        .queryParam("incidentId", incidentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].incidentId").value(incidentId))
+                .andExpect(jsonPath("$[0].graphVersion").value("langgraph-v1"));
+    }
+
+    @Test
     @DisplayName("不存在的路径 -> 404 not_found，而不是 500")
     void unknownPathYields404() throws Exception {
         // @ExceptionHandler(Exception.class) 会把 NoResourceFoundException 吞成

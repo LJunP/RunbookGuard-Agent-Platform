@@ -48,8 +48,11 @@ public interface AgentRunMapper {
     @Select("SELECT " + COLUMNS + " FROM agent_run WHERE run_id = #{runId}")
     AgentRun findByIdAnyTenant(@Param("runId") String runId);
 
-    @Select("""
-            SELECT """ + COLUMNS + """
+    // 用普通字符串拼接而不是文本块：Java 文本块会剥掉每行行尾空格，
+    // 这里的 "SELECT " 行尾空格被剥掉后拼上 COLUMNS 成为 "SELECTrun_id" ——
+    // 一条只有控制台点击 Incident 才会触发的 SQL，从 M1 坏到现在
+    // （CI 全绿后用户实际使用时暴露，控制台 500）。
+    @Select("SELECT " + COLUMNS + """
             FROM agent_run
             WHERE incident_id = #{incidentId} AND tenant_id = #{tenantId}
             ORDER BY created_at DESC
