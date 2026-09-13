@@ -79,10 +79,32 @@ $KUBECTL get nodes >/dev/null 2>&1 || { echo "FAIL 集群不可用"; exit 1; }
 NODE_COUNT="$($KUBECTL get nodes --no-headers | wc -l | tr -d ' ')"
 check "集群有多个节点（单节点测不出节点级故障）" \
   "$([ "$NODE_COUNT" -ge 2 ] && echo 1 || echo 0)" "nodes=$NODE_COUNT"
-check "控制面 NodePort 可达" \
-  "$([ "$(probe_cp)" = "200" ] && echo 1 || echo 0)"
-check "控制台 NodePort 可达" \
-  "$([ "$(curl -s -o /dev/null -m 3 -w '%{http_code}' "${CONSOLE_URL}/index.html")" = "200" ] && echo 1 || echo 0)"
+
+# NodePort 可达性必须**等待**：kube-proxy 的 iptables 规则传播是异步的，
+# rollout ready 后立刻探测可能撞上未生效窗口（第三跑在 runner 上实测，
+# 毫秒级 FAIL，而 console 的 30081 通——两个 Service 传播不同步）。
+wait_for_nodeport() {
+  local name="$1" url="$2" deadline
+  deadline=$(( $(date +%s) + 90 ))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    if [ "$(curl -s -o /dev/null -m 3 -w '%{http_code}' "$url")" != "000" ]; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+
+if wait_for_nodeport cp "${CP_URL}/api/v1/incidents"; then
+  check "控制面 NodePort 可达" 1
+else
+  check "控制面 NodePort 可达" 0 "等了 90s 仍不可达"
+fi
+if wait_for_nodeport console "${CONSOLE_URL}/index.html"; then
+  check "控制台 NodePort 可达" 1
+else
+  check "控制台 NodePort 可达" 0 "等了 90s 仍不可达"
+fi
 
 echo
 echo "== 1. 三类健康检查确实分离 =="

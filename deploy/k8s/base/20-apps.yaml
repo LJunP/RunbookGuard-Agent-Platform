@@ -233,7 +233,10 @@ spec:
             failureThreshold: 6
           resources:
             requests: { cpu: 200m, memory: 512Mi }
-            limits: { cpu: "1", memory: 1Gi }
+            # 1Gi 是 CI 实测的擦边值：2 核 runner 上 JVM 启动峰值（堆 768M +
+            # 元空间 + JIT）会顶到 limit 被 OOMKilled，两个副本同窗口重启
+            # （第三跑：Pod 56s 大 RESTARTS 2）。1.5Gi 让它有稳定余量。
+            limits: { cpu: "1", memory: 1536Mi }
 ---
 apiVersion: v1
 kind: Service
