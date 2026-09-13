@@ -150,6 +150,31 @@ class TraceApiIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Policy 拒绝原因（not_in_allowlist 等）也是合法的 failureClass")
+    void policyDenyReasonsAreAccepted() throws Exception {
+        // 步骤级 failure_code 的词汇表 = FailureClass ∪ PolicyDenyReason。
+        // 拦截类事件（not_in_allowlist）不是 Run 失败，但必须在 Trace 里可见——
+        // 否则控制台看不到「被诱导的工具被拦下了」这条最有说服力的记录。
+        CallerWithToken runtime = callerWithToken(tenantA, "AGENT_RUNTIME,OPERATOR");
+        String runId = createRun(runtime);
+
+        mvc.perform(post("/api/v1/runs/" + runId + "/trace")
+                        .header("Authorization", bearer(runtime))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of(
+                                "steps", List.of(Map.of(
+                                        "sequence", 1, "nodeName", "POLICY_CHECK",
+                                        "status", "DENIED",
+                                        "failureClass", "not_in_allowlist")),
+                                "evidence", List.of()))))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/v1/runs/" + runId + "/trace")
+                        .header("Authorization", bearer(runtime)))
+                .andExpect(jsonPath("$.steps[0].failureClass").value("not_in_allowlist"));
+    }
+
+    @Test
     @DisplayName("非法 failureClass -> 400，自由文本不进库")
     void unknownFailureClassIsRejected() throws Exception {
         CallerWithToken runtime = callerWithToken(tenantA, "AGENT_RUNTIME,OPERATOR");

@@ -120,8 +120,16 @@ public class TraceService {
         int stepsWritten = 0;
         for (StepInput input : steps) {
             if (input.failureClass() != null) {
-                // 提前校验取值合法：自由文本进了库，M6 的失败归因统计就失效了。
-                FailureClass.fromWire(input.failureClass());
+                // 步骤级 failure_code 的词汇表是并集：FailureClass（终止/失败类）
+                // + PolicyDenyReason（Policy 拒绝类）。不是终态失败的拒绝原因
+                // （如 not_in_allowlist）必须同样合法——自由文本进了库，
+                // M6 的失败归因统计就失效了。
+                try {
+                    FailureClass.fromWire(input.failureClass());
+                } catch (IllegalArgumentException e) {
+                    io.runbookguard.controlplane.messaging.PolicyDenyReason.fromWire(
+                            input.failureClass());
+                }
             }
             stepsWritten += stepMapper.insertIfAbsent(new RunStep(
                     "stp-" + UUID.randomUUID(), run.runId(), input.sequence(),

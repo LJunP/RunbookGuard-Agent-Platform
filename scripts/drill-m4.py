@@ -33,6 +33,10 @@ from agent_runtime.agent.state import RunStatus  # noqa: E402
 from agent_runtime.agent.termination import BoundedLoopGuard, BudgetState  # noqa: E402
 from agent_runtime.approval.digest import digest as digest_fn  # noqa: E402
 from agent_runtime.approval.gateway import ControlPlaneApprovalGateway  # noqa: E402
+from agent_runtime.agent.trace_reporter import (  # noqa: E402
+    report_graph_outcome,
+    report_loop_outcome,
+)
 from agent_runtime.provider.fake import FakeProvider, FakeTurn  # noqa: E402
 from agent_runtime.tools import catalogue  # noqa: E402
 from agent_runtime.tools.action_executor import ActionToolExecutor  # noqa: E402
@@ -182,6 +186,10 @@ async def drill_1_read_only_diagnosis(client: httpx.AsyncClient) -> None:
         _spec(run_id, allowed=frozenset(t.name for t in catalogue.READ_ONLY_TOOLS)),
         READ_PLAN,
     )
+    reported = await report_loop_outcome(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=outcome
+    )
+    check("执行轨迹已上报控制面（控制台可见）", reported)
     check("终态为 COMPLETE", outcome.terminal_status is RunStatus.COMPLETE,
           f"actual={outcome.terminal_status} failure={outcome.failure_class}")
     check("从真实 lab 取到 3 份证据", len(outcome.evidence) == 3,
@@ -334,6 +342,22 @@ async def drill_4_approved_action_executes_once(client: httpx.AsyncClient) -> No
             arguments_digest=authorization.arguments_digest,
         ),
     )
+    # 动作执行是本演练的核心事件：手工构造一条可读的步骤上报，让控制台
+    # 的审批链路里能看到「动作真的执行了」而不是只有审批记录。
+    from agent_runtime.agent.state import RunStatus as _RS
+
+    action_outcome = type("Outcome", (), {
+        "steps": [type("S", (), {
+            "sequence": 1, "node": _RS.EXECUTING_TOOL,
+            "detail": f"rollback executed: {first.payload}",
+            "tool_name": "rollback_synthetic_deployment", "failure_code": None,
+        })()],
+        "evidence": [],
+    })()
+    reported4 = await report_loop_outcome(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=action_outcome
+    )
+    check("动作执行的轨迹已上报控制面（控制台可见）", reported4)
     check("动作执行成功", first.payload["rolled_back_to"] == "v1.4.2", str(first.payload))
     check("首次执行不是重放", first.payload["replayed"] is False)
 
@@ -408,6 +432,10 @@ async def drill_5_cross_process_resume(client: httpx.AsyncClient) -> None:
         decision={"decision": "APPROVED", "approval_id": approval_id},
         thread_id=run_id,
     )
+    reported5 = await report_graph_outcome(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=resumed
+    )
+    check("恢复后的执行轨迹已上报控制面（控制台可见）", reported5)
     check("新实例恢复后到达终态",
           resumed.terminal_status in {RunStatus.COMPLETE, RunStatus.FAILED},
           f"actual={resumed.terminal_status} failure={resumed.failure_class}")
@@ -481,6 +509,10 @@ async def drill_7_injection_does_not_escalate(client: httpx.AsyncClient) -> None
     outcome = await loop.run(
         _spec(run_id, allowed=frozenset(t.name for t in catalogue.READ_ONLY_TOOLS)), plan
     )
+    reported7 = await report_loop_outcome(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=outcome
+    )
+    check("注入演练的执行轨迹已上报控制面（控制台可见）", reported7)
 
     injected = [
         e for e in outcome.evidence if e.source_type == "search_service_logs"
