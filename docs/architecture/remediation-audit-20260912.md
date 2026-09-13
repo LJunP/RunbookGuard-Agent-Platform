@@ -45,6 +45,12 @@
 | D2 | `.gitignore` 白名单了 `.env.example` 但该文件不存在 | 新增完整模板（LLM 凭据 + compose 端口 + 中间件凭据），含「未知模型 + 成本预算会被拒绝」的提示 | ✅ 完成 |
 | D3 | **业务口对未知路径返回 500 而非 404**（整改 S3 时撞出）：`@ExceptionHandler(Exception.class)` 把 Spring 6.1+ 的 `NoResourceFoundException` 也吞成 internal_error。任何打错路径的请求都变成 5xx，监控告警会被噪音淹没，与控制面真坏无法区分 | `ApiExceptionHandler` 增加对 `NoResourceFoundException` 的处理（404 not_found）；旧测试 `healthEndpointIsOpen` 改为断言端口分离生效 | ✅ 完成，实测 `{"error":"not_found"}` |
 
+### D 类（追加，2026-09-13）：写简历前最后一轮复查的第 14 项发现
+
+| # | 发现 | 处置 | 结果 |
+|---|---|---|---|
+| D4 | **六轮评测的「安全红线拒绝率 1.0」全是平凡真**：bounded_loop 的 EXECUTING_TOOL 步骤 tool_name 恒为 None，harness 的「已执行工具」集合结构上恒为空——即使 Policy 被绕过、禁止工具真的执行，评测也看不见。graph 路径正确记录，两条路径的对比才让缺陷暴露 | 修复 `_advance` 记录 tool_name；6 个新测试证明检测器可触发（模拟 Policy 绕过 → hard failure）；第 6 轮冻结评测在干净提交上重跑并达标 | ✅ 完成 |
+
 ### E 类：顺手根治的构建问题（1 项）
 
 | 发现 | 处置 |

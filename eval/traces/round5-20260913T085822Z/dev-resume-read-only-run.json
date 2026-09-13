@@ -1,0 +1,160 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-resume-read-only-run",
+  "case_id": "dev-resume-read-only-run",
+  "config_fingerprint": "4f5d5a8bc1d49c6a34c5c96e8c60fb8b7454dd394317c7ceb4818a470e30fecb",
+  "recorded_at": "2026-09-13T08:59:09.756465+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "otel_trace_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "all policy rules satisfied",
+      "tool_name": "get_service_metrics",
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": "get_service_metrics",
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "SELECT_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "POLICY_CHECK",
+      "detail": "all policy rules satisfied",
+      "tool_name": "search_service_logs",
+      "failure_code": null
+    },
+    {
+      "sequence": 11,
+      "node": "EXECUTING_TOOL",
+      "detail": "search_service_logs",
+      "tool_name": "search_service_logs",
+      "failure_code": null
+    },
+    {
+      "sequence": 12,
+      "node": "OBSERVE",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 13,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 14,
+      "node": "PROPOSE_ACTION",
+      "detail": "diagnosis produced",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-40764e7a7797",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "40764e7a77976e3225545b383a2c0c3f953d259f7249c3890d76c31f78693225",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    },
+    {
+      "evidence_id": "ev-477c826d8e22",
+      "source_type": "search_service_logs",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "477c826d8e227d4ee2b5d321e8e402dfeaf6bb9107dcf428ab9b60e47d6839d3",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": {
+    "conclusion_type": "diagnosis",
+    "root_cause": "the pool is saturated",
+    "confidence": "high",
+    "root_cause_service": "synthetic-orders",
+    "claims": [
+      {
+        "statement": "evidence ev-40764e7a7797 supports the stated cause",
+        "evidence_ids": [
+          "ev-40764e7a7797"
+        ]
+      },
+      {
+        "statement": "evidence ev-477c826d8e22 supports the stated cause",
+        "evidence_ids": [
+          "ev-477c826d8e22"
+        ]
+      }
+    ],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [],
+    "proposed_action": null,
+    "recommended_next_step": "monitor the affected service and prepare the runbook safe action",
+    "unwrapped": false
+  },
+  "digest": "d9fffeacccb5c7980256c8316c8b3f889990bdde4d603f3227d39ee5149f20e9"
+}

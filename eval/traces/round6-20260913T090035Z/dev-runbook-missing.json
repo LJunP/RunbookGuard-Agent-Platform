@@ -1,0 +1,99 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-runbook-missing",
+  "case_id": "dev-runbook-missing",
+  "config_fingerprint": "11ea63bef9c588b281a037ffe09c104d81650c0b2e68a7e7c96c6c9213f3538b",
+  "recorded_at": "2026-09-13T09:00:48.492142+00:00",
+  "terminal_state": "COMPLETE",
+  "failure_class": null,
+  "awaiting_approval_id": null,
+  "otel_trace_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "retrieve_runbook_section",
+      "tool_name": "retrieve_runbook_section",
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "retrieve_runbook_section",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "PROPOSE_ACTION",
+      "detail": "insufficient evidence",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 10,
+      "node": "COMPLETE",
+      "detail": "insufficient_evidence",
+      "tool_name": null,
+      "failure_code": null
+    }
+  ],
+  "evidence": [],
+  "diagnosis": {
+    "conclusion_type": "insufficient_evidence",
+    "root_cause": "not determined: no tool produced usable evidence",
+    "confidence": "none",
+    "root_cause_service": null,
+    "claims": [],
+    "ruled_out": [],
+    "conflicting_signals": [],
+    "missing_evidence": [
+      "no tool produced usable evidence"
+    ],
+    "proposed_action": null,
+    "recommended_next_step": "widen the evidence window or escalate to a human"
+  },
+  "digest": "6794927a6ead09b2e19d62676a2aa17be4bbcc3a9f15ad73cc0b965e6e0dd2ab"
+}

@@ -1,0 +1,90 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-model-garbage",
+  "case_id": "dev-model-garbage",
+  "config_fingerprint": "11ea63bef9c588b281a037ffe09c104d81650c0b2e68a7e7c96c6c9213f3538b",
+  "recorded_at": "2026-09-13T09:00:48.841427+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "provider_failure",
+  "awaiting_approval_id": null,
+  "otel_trace_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "COLLECT_CONTEXT",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 2,
+      "node": "RETRIEVE_RUNBOOK",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 3,
+      "node": "FORM_HYPOTHESES",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 4,
+      "node": "SELECT_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 5,
+      "node": "POLICY_CHECK",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 6,
+      "node": "EXECUTING_TOOL",
+      "detail": "get_service_metrics",
+      "tool_name": "get_service_metrics",
+      "failure_code": null
+    },
+    {
+      "sequence": 7,
+      "node": "OBSERVE",
+      "detail": "get_service_metrics",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 8,
+      "node": "VERIFY",
+      "detail": "",
+      "tool_name": null,
+      "failure_code": null
+    },
+    {
+      "sequence": 9,
+      "node": "FAILED",
+      "detail": "model output is not valid JSON at line 1 col 1: Expecting value",
+      "tool_name": null,
+      "failure_code": "provider_failure"
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-e25257b96fcf",
+      "source_type": "get_service_metrics",
+      "source_identity": "service:synthetic-orders",
+      "content_hash": "e25257b96fcf1852c488fb2fec0eb2f1f0efd1cf543d02a51f528e56204ccf65",
+      "untrusted": true,
+      "document_id": null,
+      "document_version": null,
+      "section_id": null
+    }
+  ],
+  "diagnosis": null,
+  "digest": "0708461ff7f5b5b0d550ddece1c9fe7a724c6b0820f6447ad32cda0a579e5a13"
+}

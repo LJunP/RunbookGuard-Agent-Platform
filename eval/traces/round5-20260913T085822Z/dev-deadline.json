@@ -1,0 +1,23 @@
+{
+  "schema_version": "1",
+  "run_id": "eval-dev-deadline",
+  "case_id": "dev-deadline",
+  "config_fingerprint": "4f5d5a8bc1d49c6a34c5c96e8c60fb8b7454dd394317c7ceb4818a470e30fecb",
+  "recorded_at": "2026-09-13T08:59:09.516280+00:00",
+  "terminal_state": "FAILED",
+  "failure_class": "deadline_exceeded",
+  "awaiting_approval_id": null,
+  "otel_trace_id": null,
+  "steps": [
+    {
+      "sequence": 1,
+      "node": "FAILED",
+      "detail": "deadline 2026-09-13T08:59:08.516193+00:00 reached at 2026-09-13T08:59:09.516223+00:00",
+      "tool_name": null,
+      "failure_code": "deadline_exceeded"
+    }
+  ],
+  "evidence": [],
+  "diagnosis": null,
+  "digest": "643a7a92d0a5e3fc449c4ac043bdc9e0b1d9ed0ac1660518e15bf42c5123e887"
+}
