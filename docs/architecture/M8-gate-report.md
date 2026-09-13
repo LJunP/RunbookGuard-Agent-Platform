@@ -398,7 +398,13 @@ Docker-in-Docker：为了限制动作而给执行者 Docker socket 或 K8s 写�
 | CPU throttling | 需要构造持续 CPU 压力并观察 `container_cpu_cfs_throttled_seconds_total`，而集群里没有 Prometheus（§7.3），只能靠 `kubectl top`，分辨率不足以支撑一个可信断言。**不做胜过做一个测不准的** |
 | MQ backlog | 需要往 RabbitMQ 灌消息并观察队列深度。灌消息需要一个生产者，而 Worker 的消息生产逻辑在 Java 侧且需要真实 Run 驱动。M2 的 `drill-m2.sh` 在 compose 上覆盖了重投与恢复；K8s 层面的 backlog 演练**未做** |
 
-### 7.5 CI 的 k8s job 未在 GitHub 上实跑（UNKNOWN）
+### 7.5 CI 的 k8s job 未在 GitHub 上实跑（UNKNOWN）—— 已关账（2026-09-13 后记）
+
+> 后记：k8s job 第四跑在 runner 上全绿——kind 三节点集群、CNI 执行 NetworkPolicy
+> 的核验、部署、26 项演练全部通过。过程中修了两处本报告没有预见的 runner 差异：
+> GNU mktemp 模板差异导致演练死循环（§6「macOS 能跑 Linux 不能跑」的第二例），
+> 以及 1Gi 内存 limit 对 JVM 启动峰值是擦边值（两副本同窗口重启）。本节其余内容
+> 按当时事实保留。
 
 与 M7 §7.1 同一情况：`k8s` job 的每条命令都在本地验证过，
 但 workflow 本身未被 GitHub Actions 执行过。

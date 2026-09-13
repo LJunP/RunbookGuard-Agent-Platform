@@ -15,7 +15,7 @@
 | # | 发现 | 处置 | 结果 |
 |---|---|---|---|
 | A1 | **无 LICENSE**。公开仓库必需 | 新增 `LICENSE`（MIT，版权人 LJunP） | ✅ 完成 |
-| A2 | **远端已配置**（github.com/LJunP/RunbookGuard-Agent-Platform），本地领先 3 个 commit；CI 从未在 GitHub Actions 上跑过 | 推送会触发 6 条 job。**留待项目所有者执行**——首次实跑预期需要调整（runner 资源、k8s job 起 kind 集群的开销），且发布动作应由所有者拍板 | ⏳ 待所有者执行 |
+| A2 | **远端已配置**（github.com/LJunP/RunbookGuard-Agent-Platform），本地领先 3 个 commit；CI 从未在 GitHub Actions 上跑过 | **已完成**（2026-09-13，所有者授权推送）。CI 共 4 次运行：首跑 5/6 绿（k8s job 因 GNU mktemp 差异死循环超时）、二跑暴露测试顺序依赖与抓取竞态、三跑 k8s 抖动（1Gi limit 擦边 OOM）、四跑 **6/6 全绿**（run 34741559390）。修了 4 处 runner 差异，每次一个 commit | ✅ 完成 |
 | A3 | 所有者验收审查未做 | 10 份 Gate 报告在 `docs/architecture/` | ⏳ 待所有者执行 |
 
 ### B 类：功能缺口（5 项，本轮完成 4 项）
@@ -32,7 +32,7 @@
 
 | # | 发现 | 处置 |
 |---|---|---|
-| C1 | CI 从未实跑 | 同 A2，待推送后触发 |
+| C1 | CI 从未实跑 | **已关账**：见 A2。runner 上 6/6 全绿 | ✅ 完成 |
 | C2 | K8s 环境下指标与 trace 未验证（集群无观测栈） | 保持现状。要验证需在集群里部署 Prometheus/collector——M8 已论证观测栈归 compose 职责；如需验证是新增工作而非整改 |
 | C3 | CPU throttling / MQ backlog 两类 K8s 演练未做 | 保持 M8 报告的理由：前者无集群内 Prometheus，分辨率不足以支撑可信断言；后者需要 Java 侧生产者。不做胜过做一个测不准的 |
 | C4 | held 无 Replay | 刻意设计（held 只跑一次的纪律）。M6 报告 §7.4 已写明。**不整改**——给 held 加 Replay 等于让 held 跑两次，破坏它的独立性 |
@@ -85,7 +85,7 @@ business/management，`control-plane-policy` 为 kubelet 探针放行 9080（无
 不是被遗忘的工作。
 
 距离「公开发布」还差两步，都不在开发范畴内：
-1. `git push`（远端已配置，领先 3+1 个 commit）——触发 CI 首跑，预期要调
+1. ~~`git push`——触发 CI 首跑~~ **已完成**：仓库已同步，CI 6/6 全绿（run 34741559390）
 2. 所有者验收审查
 
-写简历 / 对外引用数字时仍必须连带 M6 报告的三条限制（脚本化 provider、held 非独立、CI 未实跑）。
+**CI 达成的过程本身值得记录**：4 次运行、3 次修复，每一次失败都是本地永远不会出现的差异——GNU mktemp 模板（BSD 收、GNU 拒，导致演练死循环烧掉 39 分钟）、测试类执行顺序（append-only 触发器把顺序依赖变成失败）、Prometheus 抓取竞态、1Gi limit 对 JVM 的擦边 OOM。「本地全绿 ≠ runner 全绿」从一句口号变成了四次实证。

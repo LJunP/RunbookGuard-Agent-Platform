@@ -337,7 +337,11 @@ docker compose -f deploy/compose/docker-compose.yml down -v
 
 ## 7. 已知限制与未验证项
 
-### 7.1 CI 未在 GitHub 上实跑（UNKNOWN）
+### 7.1 CI 未在 GitHub 上实跑（UNKNOWN）—— 已关账（2026-09-13 后记）
+
+> 后记：推送后共 4 次运行。首跑 5/6 绿、k8s job 因 GNU mktemp 差异死循环被超时取消；
+> 第二跑暴露测试类顺序依赖与 Prometheus 抓取竞态；第三跑 k8s job 抖动（1Gi limit 擦边 OOM）；
+> 第四跑 **6/6 全绿**（run 34741559390）。本节其余内容按当时事实保留。
 
 `.github/workflows/ci.yml` 的 5 条 job 只在本地逐条验证了它们要跑的命令
 （`mvn test`、`pytest`、`npm test`、compose build/up/smoke），

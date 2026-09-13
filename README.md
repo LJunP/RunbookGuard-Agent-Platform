@@ -41,7 +41,7 @@
 1. 冻结评测用的是**脚本化 provider**，量的是编排与安全机制的正确性，不是诊断准确率。
 2. `incidents-held` 与 `incidents-dev` 由同一作者设计，共用同一批故障剧本与判据代码。held 上的成绩只证明「产品代码里没有针对 dev 具体 case 的硬编码」，不构成泛化能力的证明。
 
-3. CI 的 workflow 未在 GitHub 上实跑过（本地逐条验证了它跑的命令）；没有真实 GPU，vLLM 部分只有架构理解与客户端契约。
+3. 没有真实 GPU，vLLM 部分只有架构理解与客户端契约。CI 已在 GitHub Actions 上全绿（6 条 job，含 runner 上真实的 kind 集群部署与 26 项演练；达成过程：4 次运行 + 3 次修复）。
 
 真实模型（glm-5.3-flash）在 12 个诊断 case 上的实测：**成功率 0.6667、归因正确率 0.8000**。完整数据与逐条失败分析见 [M6 Gate 报告](docs/architecture/M6-gate-report.md) §7.2b。
 
@@ -215,7 +215,7 @@ cd apps/console-web && npm ci && npm run typecheck && npm test
 
 CI 把这些拆成 6 条独立 job（Java / Python / Console / 跨语言契约 / Compose 一键起 / kind 集群演练）。拆开的理由：一个语言的失败不该掩盖另一个语言的状态。
 
-**CI 的 workflow 未在 GitHub 上实跑过** —— 每条命令都在本地验证了，但 runner 环境的差异（Docker CE vs Desktop、资源限制、缓存键）大概率需要调整。这一点不该被读成「CI 已通过」。
+**CI 已在 GitHub Actions 上全绿**（首次达成 2026-09-13，run 34741559390）。达成它用了 4 次运行与 3 次修复，每一次修的都是真实差异：GNU mktemp 与 BSD 的模板差异（runner 上死循环烧掉 39 分钟）、测试类执行顺序依赖（append-only 触发器把它变成失败）、Prometheus 抓取竞态与 PromQL 编码、k8s 里 JVM 1Gi limit 的擦边 OOM。**本地全绿从来不等于 runner 全绿** —— 这句话本身已被验证。
 
 ## 演练与评测脚本
 
