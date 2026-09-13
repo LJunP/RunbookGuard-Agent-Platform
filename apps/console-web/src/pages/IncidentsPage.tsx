@@ -28,11 +28,17 @@ export function IncidentsPage({ onError }: Props) {
 
   return (
     <>
+      {/* Trace 视图放在列表**上方**：点击 Run 后它立即可见。
+          此前它在页面最底部，要滚过整份 20 行的 Incident 列表才能看到——
+          用户实际使用时完全找不到它。 */}
+      {selectedRun ? <TraceView runId={selectedRun} onError={onError} /> : null}
+
       <div className="columns">
         <section className="panel">
           <h2>Incident</h2>
           <p className="hint">
             {incidents.loading ? "加载中…" : `${incidents.data?.length ?? 0} 条`}
+            {selectedRun ? "（已选中一条 Run，其 Trace 在页面顶部）" : ""}
           </p>
           <table>
             <thead>
@@ -135,7 +141,6 @@ export function IncidentsPage({ onError }: Props) {
         </section>
       </div>
 
-      {selectedRun ? <TraceView runId={selectedRun} onError={onError} /> : null}
     </>
   );
 }

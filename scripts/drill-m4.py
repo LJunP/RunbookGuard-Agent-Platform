@@ -34,8 +34,7 @@ from agent_runtime.agent.termination import BoundedLoopGuard, BudgetState  # noq
 from agent_runtime.approval.digest import digest as digest_fn  # noqa: E402
 from agent_runtime.approval.gateway import ControlPlaneApprovalGateway  # noqa: E402
 from agent_runtime.agent.trace_reporter import (  # noqa: E402
-    report_graph_outcome,
-    report_loop_outcome,
+    report_run_lifecycle,
 )
 from agent_runtime.provider.fake import FakeProvider, FakeTurn  # noqa: E402
 from agent_runtime.tools import catalogue  # noqa: E402
@@ -186,10 +185,12 @@ async def drill_1_read_only_diagnosis(client: httpx.AsyncClient) -> None:
         _spec(run_id, allowed=frozenset(t.name for t in catalogue.READ_ONLY_TOOLS)),
         READ_PLAN,
     )
-    reported = await report_loop_outcome(
-        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=outcome
+    lifecycle = await report_run_lifecycle(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id,
+        outcome=outcome, reporter="loop",
     )
-    check("执行轨迹已上报控制面（控制台可见）", reported)
+    check("执行轨迹已上报控制面（控制台可见）", lifecycle["trace"])
+    check("Run 已按 Worker 协议结算终态（列表不再显示 CREATED 0/25）", lifecycle["terminal"])
     check("终态为 COMPLETE", outcome.terminal_status is RunStatus.COMPLETE,
           f"actual={outcome.terminal_status} failure={outcome.failure_class}")
     check("从真实 lab 取到 3 份证据", len(outcome.evidence) == 3,
@@ -353,11 +354,15 @@ async def drill_4_approved_action_executes_once(client: httpx.AsyncClient) -> No
             "tool_name": "rollback_synthetic_deployment", "failure_code": None,
         })()],
         "evidence": [],
+        "terminal_status": _RS.COMPLETE,
+        "failure_class": None,
     })()
-    reported4 = await report_loop_outcome(
-        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=action_outcome
+    lifecycle4 = await report_run_lifecycle(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id,
+        outcome=action_outcome, reporter="loop",
     )
-    check("动作执行的轨迹已上报控制面（控制台可见）", reported4)
+    check("动作执行的轨迹已上报控制面（控制台可见）", lifecycle4["trace"])
+    check("Run 终态已结算（COMPLETE）", lifecycle4["terminal"])
     check("动作执行成功", first.payload["rolled_back_to"] == "v1.4.2", str(first.payload))
     check("首次执行不是重放", first.payload["replayed"] is False)
 
@@ -432,10 +437,12 @@ async def drill_5_cross_process_resume(client: httpx.AsyncClient) -> None:
         decision={"decision": "APPROVED", "approval_id": approval_id},
         thread_id=run_id,
     )
-    reported5 = await report_graph_outcome(
-        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=resumed
+    lifecycle5 = await report_run_lifecycle(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id,
+        outcome=resumed, reporter="graph",
     )
-    check("恢复后的执行轨迹已上报控制面（控制台可见）", reported5)
+    check("恢复后的执行轨迹已上报控制面（控制台可见）", lifecycle5["trace"])
+    check("恢复后 Run 已结算终态（列表不再显示 CREATED）", lifecycle5["terminal"])
     check("新实例恢复后到达终态",
           resumed.terminal_status in {RunStatus.COMPLETE, RunStatus.FAILED},
           f"actual={resumed.terminal_status} failure={resumed.failure_class}")
@@ -509,10 +516,12 @@ async def drill_7_injection_does_not_escalate(client: httpx.AsyncClient) -> None
     outcome = await loop.run(
         _spec(run_id, allowed=frozenset(t.name for t in catalogue.READ_ONLY_TOOLS)), plan
     )
-    reported7 = await report_loop_outcome(
-        client=client, base_url=CP, api_token=AGENT, run_id=run_id, outcome=outcome
+    lifecycle7 = await report_run_lifecycle(
+        client=client, base_url=CP, api_token=AGENT, run_id=run_id,
+        outcome=outcome, reporter="loop",
     )
-    check("注入演练的执行轨迹已上报控制面（控制台可见）", reported7)
+    check("注入演练的执行轨迹已上报控制面（控制台可见）", lifecycle7["trace"])
+    check("注入演练 Run 已结算终态", lifecycle7["terminal"])
 
     injected = [
         e for e in outcome.evidence if e.source_type == "search_service_logs"

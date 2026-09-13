@@ -161,3 +161,137 @@ async def _post(
 
 def now_iso() -> str:
     return datetime.now(UTC).isoformat()
+
+
+# ---- Worker 生命周期上报 -------------------------------------------------
+#
+# Trace 步骤只是档案的一半。Run 行本身的 status / steps_used / 终态
+# 由 Worker 协议维护（lease → progress → terminal）。不走这个协议的执行者
+# 会让 Run 永远停在 CREATED 0/25——控制台上看起来像空的，即使轨迹已入库
+# （用户实际点击时暴露）。
+
+_worker_counter = {"n": 0}
+
+
+async def acquire_lease(
+    *, client: httpx.AsyncClient, base_url: str, api_token: str, run_id: str
+) -> int:
+    """以 Worker 身份获取 lease，返回 fencing token。失败抛异常：
+    没有租约的执行者不该上报任何东西。"""
+    _worker_counter["n"] += 1
+    worker_id = f"drill-worker-{_worker_counter['n']}"
+    response = await client.post(
+        f"{base_url}/api/v1/worker/runs/{run_id}/lease",
+        json={"workerId": worker_id},
+        headers={"authorization": f"Bearer {api_token}"},
+    )
+    if response.status_code != 200:
+        raise RuntimeError(f"lease failed: HTTP {response.status_code} {response.text[:200]}")
+    token = response.json().get("fencingToken")
+    if not token:
+        raise RuntimeError(f"lease response missing fencingToken: {response.text[:200]}")
+    return int(token)
+
+
+async def settle_terminal(
+    *,
+    client: httpx.AsyncClient,
+    base_url: str,
+    api_token: str,
+    run_id: str,
+    worker_id: str,
+    fencing_token: int,
+    terminal_status: str,
+    failure_class: str | None = None,
+) -> bool:
+    """结算终态（幂等端点）。AWAITING_APPROVAL 不是终态，调用方应跳过。"""
+    body: dict[str, Any] = {
+        "workerId": worker_id,
+        "fencingToken": fencing_token,
+        "terminalStatus": terminal_status,
+    }
+    if failure_class:
+        body["failureClass"] = failure_class
+    try:
+        response = await client.post(
+            f"{base_url}/api/v1/worker/runs/{run_id}/terminal",
+            json=body,
+            headers={"authorization": f"Bearer {api_token}"},
+        )
+    except httpx.HTTPError as exc:
+        log.warning("terminal settlement for run %s failed: %s", run_id, exc)
+        return False
+    if response.status_code != 200:
+        log.warning(
+            "terminal settlement for run %s rejected: HTTP %s %s",
+            run_id, response.status_code, response.text[:200],
+        )
+        return False
+    return True
+
+
+async def report_run_lifecycle(
+    *,
+    client: httpx.AsyncClient,
+    base_url: str,
+    api_token: str,
+    run_id: str,
+    outcome: Any,
+    reporter: str,
+) -> dict[str, bool]:
+    """一站式：上报轨迹 + 结算终态。
+
+    只对**终态**结算（COMPLETE / FAILED / BLOCKED）；挂起（AWAITING_APPROVAL）
+    的 Run 本来就该停在半路，不结算。
+    """
+    ok_trace = (
+        report_loop_outcome if reporter == "loop" else report_graph_outcome
+    )
+    ok_trace_result = await ok_trace(
+        client=client, base_url=base_url, api_token=api_token, run_id=run_id, outcome=outcome
+    )
+
+    terminal = outcome.terminal_status.value
+    results = {"trace": ok_trace_result, "progress": False, "terminal": False}
+    if terminal in {"COMPLETE", "FAILED", "BLOCKED"}:
+        fencing = await acquire_lease(
+            client=client, base_url=base_url, api_token=api_token, run_id=run_id
+        )
+        worker_id = f"drill-worker-{_worker_counter['n']}"
+
+        # 进度上报：Run 列表的「状态 / 步数」列读的是 agent_run 行本身，
+        # 不走这一步的话即使轨迹已入库，列表仍显示 CREATED 0/25——
+        # 看起来像空 Run（用户实际点击时暴露）。
+        steps = getattr(outcome, "steps", [])
+        tool_calls = sum(
+            1 for s in steps
+            if (s.node.value if hasattr(s.node, "value") else s.node) == "EXECUTING_TOOL"
+            and getattr(s, "failure_code", None) is None
+        )
+        try:
+            progress_response = await client.post(
+                f"{base_url}/api/v1/worker/runs/{run_id}/progress",
+                json={
+                    "workerId": worker_id,
+                    "fencingToken": fencing,
+                    "status": terminal,
+                    "stepsUsed": len(steps),
+                    "toolCallCount": tool_calls,
+                },
+                headers={"authorization": f"Bearer {api_token}"},
+            )
+            results["progress"] = progress_response.status_code == 200
+        except httpx.HTTPError as exc:
+            log.warning("progress for run %s failed: %s", run_id, exc)
+
+        results["terminal"] = await settle_terminal(
+            client=client,
+            base_url=base_url,
+            api_token=api_token,
+            run_id=run_id,
+            worker_id=worker_id,
+            fencing_token=fencing,
+            terminal_status=terminal,
+            failure_class=outcome.failure_class,
+        )
+    return results
