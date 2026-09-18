@@ -1,5 +1,13 @@
 # RunbookGuard Agent Platform
 
+> ### 60 秒版本
+>
+> **是什么** —— 让 AI 在运维场景里能动手，但动不了不该动的东西。产出带引用的故障诊断，写操作必须先过服务端校验与人工审批。
+>
+> **凭什么** —— 三段分离：模型只能*建议*，Policy 服务端*校验*，Executor 才*执行*。`ToolAuthorization(allowed=True)` 只能由受 token 保护的 `issue_authorization()` 构造，绕过 Policy 在类型系统层面就不成立。
+>
+> **最该看的** —— 不是通过的指标，是我自己推翻的那个：六轮评测的「安全红线拒绝率 1.0000」全是**平凡真**，检测器结构上永不触发，Policy 真被绕过也看不见。[完整经过](docs/architecture/M6-gate-report.md)
+
 面向 SRE / DevOps / 中小研发团队的**故障诊断与受控处置 Agent 平台**。它读取告警、指标、日志、部署记录和版本化 Runbook，调用受限工具收集证据，生成带引用的故障判断；在执行任何动作之前必须通过服务端权限校验与人工审批；在 Worker 或 Agent 进程中断后能从 Checkpoint 恢复到唯一终态。
 
 它不是聊天机器人，不是可以任意执行 shell 的"全自动运维 Agent"，也不是又一个 RAG 问答。
@@ -248,6 +256,8 @@ CI 把这些拆成 6 条独立 job（Java / Python / Console / 跨语言契约 /
 | [ADR-0001](docs/adr/ADR-0001-scope-freeze-and-spec-conflicts.md) … [ADR-0010](docs/adr/ADR-0010-action-sandbox-and-k8s-boundary.md) | 10 份决策记录，含当日核验结果 |
 | [整改审计报告](docs/architecture/remediation-audit-20260912.md) | M8 后的系统审计：13 项发现的处置结果 |
 | [开发主提示词](docs/DEV_PROMPT.md) | 开发契约（五条铁律、里程碑与 Gate 定义） |
+| [5 分钟演示脚本](docs/DEMO_SCRIPT.md) | 逐段旁白与可复制命令：Incident → Trace → 审批 403 → 审计 DENIED |
+| [一个 1.0 的指标为什么值得怀疑](docs/blog/2026-09-一个1.0的指标为什么值得怀疑.md) | 从 M6 §5 提炼的独立文章：平凡真是怎么被发现的，以及如何设计不会骗自己的评测 |
 
 Gate 报告里的「实际踩到的问题」一节值得优先读：它记录了单测全绿而容器崩溃、判据存在但结构上永不触发、防御条件写反方向这几类缺陷，以及各自只有什么手段能发现。
 
