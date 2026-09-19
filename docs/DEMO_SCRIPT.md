@@ -112,6 +112,14 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST \
 **画面**：切终端。这是整段演示的**高潮**，节奏放慢。
 
 ```bash
+# 0) 先拿到 RUN_ID。上一段是界面操作，没有产出 shell 变量；
+#    直接用 $RUN_ID 会是空值，审批请求会 400。
+RUN_ID=$(curl -s -X POST \
+  -H "Authorization: Bearer dev-agent-token" \
+  -H 'Content-Type: application/json' \
+  -d "{\"incidentId\":\"$INCIDENT_ID\",\"graphVersion\":\"langgraph-v1\",\"promptVersion\":\"p1\",\"modelId\":\"fake-model\",\"datasetVersion\":\"incidents-dev\"}" \
+  "$CP/api/v1/runs" | python3 -c 'import json,sys;print(json.load(sys.stdin)["runId"])')
+
 # 1) Agent 发起一个写动作的审批请求：回滚 synthetic-orders
 APPROVAL_ID=$(curl -s -X POST \
   -H "Authorization: Bearer dev-agent-token" \
@@ -240,3 +248,33 @@ docker compose -f deploy/compose/docker-compose.yml down -v
 
 演示凭据 `dev-*-token` 由 `RUNBOOKGUARD_SEED_DEV_DATA=true` 注入，**仅限本地**。
 任何真实部署都不该打开这个开关——录屏时如果镜头扫到 compose 文件，这一条值得顺口说一句。
+
+---
+
+## 实跑验证记录（2026-09-19）
+
+本脚本的每条命令都在真实栈上跑过，不是从源码推断的。
+
+前置：`docker compose -f deploy/compose/docker-compose.yml up -d --build`
+→ `bash scripts/wait-for-stack.sh` → `bash scripts/smoke-m7.sh`
+（**30 项全绿，0 失败**）。
+
+| 演示步骤 | 期望 | 实测 |
+|---|---|---|
+| OPERATOR 建 Incident | 成功 | ✓ |
+| VIEWER 建 Incident | 403 | **403** |
+| AGENT 建 Run | 成功 | ✓ |
+| AGENT 发起审批 | 成功 | ✓ |
+| **AGENT 自批** | **403** | **403** |
+| APPROVER 批准 | APPROVED | **APPROVED** |
+| **审批后篡改参数再 consume** | **403** | **403** |
+| 审计里有 DENIED 记录 | 有 | **12 条** |
+| `grep "def approve"` 于 agent-runtime | 0 命中 | **0** |
+
+**9 / 9 通过。**
+
+环境：MacBook Pro (Apple M1 Pro) · macOS 15.2 · Docker 29.7.2 · fake provider，零真实模型调用。
+
+> 首次构建若在 `mvn dependency:go-offline` 处失败并提示
+> `Remote host terminated the handshake: SSL peer shut down incorrectly`，
+> 那是 Maven Central 的网络抖动，重跑同一条命令即可——本次即是第二次才成功。
