@@ -1,20 +1,31 @@
 # RunbookGuard Agent Platform
 
+> ### 已完结冻结（2026-09-21）· 受控 Agent 教学与工程作品
+>
+> 已实现 Java 控制面、Python 有界运维工作流、受限工具、审批、检查点、RAG 与评测，仓库按历史作品归档。
+> 脚本化 Provider 评测只验证既定机制；历史真实模型评测是有限合成诊断案例，二者均不是生产推理数据。
+> 生产客户价值、完整安全隔离、真实 GPU 推理性能及诊断泛化能力没有由这些结果证明。
+> 本次仅整理状态文档，未重跑测试或调用模型；冻结不表示所有能力生产可用，也不再补功能、部署或验收。
+> 本项目已退出作者的 LLM 推理基础设施学习路线；后续学习与新项目不依赖本仓库的代码、数据或运行环境。
+> 下文里程碑、运行说明和开发提示词保留为历史材料，不再作为继续开发或拆分资产的任务入口。
+
 > ### 60 秒版本
 >
-> **是什么** —— 让 AI 在运维场景里能动手，但动不了不该动的东西。产出带引用的故障诊断，写操作必须先过服务端校验与人工审批。
+> **是什么** —— 演示带引用的故障诊断与受控动作，写操作经服务端校验与人工审批。
 >
-> **凭什么** —— 三段分离：模型只能*建议*，Policy 服务端*校验*，Executor 才*执行*。`ToolAuthorization(allowed=True)` 只能由受 token 保护的 `issue_authorization()` 构造，绕过 Policy 在类型系统层面就不成立。
+> **设计依据** —— 三段分离：模型提出*建议*，Policy 服务端*校验*，Executor 再*执行*。`issue_authorization()` 的构造守卫用于防误用，不是密钥或类型系统提供的不可绕过安全边界。
 >
-> **最该看的** —— 不是通过的指标，是我自己推翻的那个：六轮评测的「安全红线拒绝率 1.0000」全是**平凡真**，检测器结构上永不触发，Policy 真被绕过也看不见。[完整经过](docs/architecture/M6-gate-report.md)
+> **历史教训** —— 早期「安全红线拒绝率 1.0000」曾是**平凡真**：检测器结构上不触发，即使 Policy 被绕过也看不见。后续修复与重跑记录见[完整经过](docs/architecture/M6-gate-report.md)。
 
 面向 SRE / DevOps / 中小研发团队的**故障诊断与受控处置 Agent 平台**。它读取告警、指标、日志、部署记录和版本化 Runbook，调用受限工具收集证据，生成带引用的故障判断；在执行任何动作之前必须通过服务端权限校验与人工审批；在 Worker 或 Agent 进程中断后能从 Checkpoint 恢复到唯一终态。
 
 它不是聊天机器人，不是可以任意执行 shell 的"全自动运维 Agent"，也不是又一个 RAG 问答。
 
-**诊断能力不是这个项目的护城河。** HolmesGPT 与 kagent 已经在做 SRE Agent。这里的内核是：**如何让一个会调用工具的 AI 在运维场景里不出事，并且能被证明不出事。**
+**诊断能力不是这个项目的护城河。** HolmesGPT 与 kagent 已经在做 SRE Agent。这里保留的是权限、审批、证据与失败恢复的工程设计及有限验证，不构成生产安全认证。
 
-## 当前状态：M0 → M8 全部交付
+## 历史里程碑记录：M0 → M8
+
+下表“已交付”采用原里程碑的范围与口径；已知限制继续保留，不等同于全面生产验收。
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
@@ -199,7 +210,7 @@ docker compose -f deploy/compose/docker-compose.yml up -d agent-runtime
    suggestion              authorization                    execution
 ```
 
-三段不在同一个函数里。`ToolAuthorization(allowed=True)` 只能由 `issue_authorization()` 构造，后者受 `_POLICY_ISSUER_TOKEN` 保护——类型系统层面禁止绕过 Policy 直接执行。
+三段不在同一个函数里。`issue_authorization()` 使用 `_POLICY_ISSUER_TOKEN` 构造授权对象；该固定字符串只是进程内防误用守卫，不防御有同进程代码执行能力的调用方，不能据此声称类型系统禁止绕过 Policy。
 
 写动作还需人工审批，审批绑定参数摘要（`arguments_digest`，`JCS-SHA256-V1`）。执行前重新比对四项（审批 id / 工具名 / 资源 / 参数摘要），任一不符即拒绝。
 
@@ -275,4 +286,4 @@ Gate 报告里的「实际踩到的问题」一节值得优先读：它记录了
 - [HolmesGPT](https://github.com/robusta-dev/holmesgpt) — CNCF Sandbox 的 SRE Agent，面向生产事件调查与根因分析。
 - [kagent](https://github.com/kagent-dev/kagent) — CNCF 的云原生 Agent 框架，Agent / ModelConfig / ToolServer 为 Kubernetes CRD。
 
-差异化不在诊断能力，而在于**如何让一个会调用工具的 AI 在运维场景里不出事，并且能被证明不出事**：权限与审批边界、可评测性、崩溃可恢复。
+本作品展示的重点是权限与审批边界、可评测性和崩溃恢复设计；已有验证只支持对应环境与案例，不保证生产环境不会出错。
